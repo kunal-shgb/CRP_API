@@ -1,0 +1,6 @@
+export enum UserRole {
+  ADMIN = 'ADMIN',
+  HEAD_OFFICE = 'HEAD_OFFICE',
+  REGIONAL_OFFICE = 'REGIONAL_OFFICE',
+  BRANCH = 'BRANCH',
+}
