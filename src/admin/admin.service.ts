@@ -19,7 +19,7 @@ export class AdminService {
     private roService: RegionalOfficesService,
     private branchesService: BranchesService,
     private usersService: UsersService,
-  ) {}
+  ) { }
 
   // Management Delegation
   async createRO(dto: CreateRegionalOfficeDto) {
@@ -50,10 +50,10 @@ export class AdminService {
   async getAnalytics() {
     const totalOpen = await this.ticketRepository.count({ where: { status: TicketStatus.OPEN } });
     const totalClosed = await this.ticketRepository.count({ where: { status: TicketStatus.CLOSED } });
-    
+
     const pendingAtBranch = await this.ticketRepository.count({ where: { current_level: TicketLevel.BRANCH, status: TicketStatus.OPEN } });
-    const pendingAtRO = await this.ticketRepository.count({ where: { current_level: TicketLevel.RO, status: TicketStatus.OPEN } });
-    const pendingAtHO = await this.ticketRepository.count({ where: { current_level: TicketLevel.HO, status: TicketStatus.OPEN } });
+    const pendingAtRO = await this.ticketRepository.count({ where: { current_level: TicketLevel.REGIONAL_OFFICE, status: TicketStatus.OPEN } });
+    const pendingAtHO = await this.ticketRepository.count({ where: { current_level: TicketLevel.HEAD_OFFICE, status: TicketStatus.OPEN } });
 
     const productWiseStats = await this.ticketRepository
       .createQueryBuilder('ticket')
@@ -67,8 +67,8 @@ export class AdminService {
       totalClosed,
       pending: {
         branch: pendingAtBranch,
-        ro: pendingAtRO,
-        ho: pendingAtHO,
+        regionalOffice: pendingAtRO,
+        headOffice: pendingAtHO,
       },
       productWiseStats,
     };

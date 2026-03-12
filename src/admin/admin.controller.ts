@@ -12,14 +12,14 @@ import { UserRole } from '../common/enums/user-role.enum';
 @UseGuards(JwtAuthGuard, RolesGuard)
 @Roles(UserRole.ADMIN)
 export class AdminController {
-  constructor(private readonly adminService: AdminService) {}
+  constructor(private readonly adminService: AdminService) { }
 
-  @Post('ro')
+  @Post('regionalOffice')
   async createRO(@Body() dto: CreateRegionalOfficeDto) {
     return this.adminService.createRO(dto);
   }
 
-  @Get('ro')
+  @Get('regionalOffice')
   async getAllROs() {
     return this.adminService.getAllROs();
   }

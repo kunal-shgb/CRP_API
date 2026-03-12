@@ -14,10 +14,10 @@ export class RegionalOffice {
   @Column({ unique: true })
   code: string;
 
-  @OneToMany(() => Branch, (branch) => branch.ro)
+  @OneToMany(() => Branch, (branch) => branch.regionalOffice)
   branches: Branch[];
 
-  @OneToMany(() => User, (user) => user.ro)
+  @OneToMany(() => User, (user) => user.regionalOffice)
   users: User[];
 
   @OneToMany(() => Ticket, (ticket) => ticket.assigned_ro)

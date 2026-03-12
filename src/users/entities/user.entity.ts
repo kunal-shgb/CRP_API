@@ -22,9 +22,9 @@ export class User {
   @JoinColumn({ name: 'branch_id' })
   branch: Branch;
 
-  @OneToOne(() => RegionalOffice, (ro) => ro.id, { nullable: true })
+  @OneToOne(() => RegionalOffice, (regionalOffice) => regionalOffice.id, { nullable: true })
   @JoinColumn({ name: 'ro_id' })
-  ro: RegionalOffice;
+  regionalOffice: RegionalOffice;
 
   @Column({ type: 'enum', enum: ProductType, nullable: true })
   product_type: ProductType;

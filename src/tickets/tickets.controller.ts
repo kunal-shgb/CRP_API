@@ -13,7 +13,7 @@ import { extname } from 'path';
 @Controller('tickets')
 @UseGuards(JwtAuthGuard, RolesGuard)
 export class TicketsController {
-  constructor(private readonly ticketsService: TicketsService) {}
+  constructor(private readonly ticketsService: TicketsService) { }
 
   @Post()
   @Roles(UserRole.BRANCH)
@@ -27,13 +27,13 @@ export class TicketsController {
     return this.ticketsService.findAllForBranch(req.user.branchId);
   }
 
-  @Get('ro')
+  @Get('regionalOffice')
   @Roles(UserRole.REGIONAL_OFFICE)
   async findAllForRO(@Request() req) {
     return this.ticketsService.findAllForRO(req.user.roId);
   }
 
-  @Get('ho')
+  @Get('headOffice')
   @Roles(UserRole.HEAD_OFFICE)
   async findAllForHO(@Request() req) {
     return this.ticketsService.findAllForHO(req.user.productType);

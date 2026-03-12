@@ -86,13 +86,13 @@
 							}
 						},
 						"url": {
-							"raw": "{{base_url}}/admin/ro",
+							"raw": "{{base_url}}/admin/regionalOffice",
 							"host": [
 								"{{base_url}}"
 							],
 							"path": [
 								"admin",
-								"ro"
+								"regionalOffice"
 							]
 						}
 					},
@@ -110,13 +110,13 @@
 							}
 						],
 						"url": {
-							"raw": "{{base_url}}/admin/ro",
+							"raw": "{{base_url}}/admin/regionalOffice",
 							"host": [
 								"{{base_url}}"
 							],
 							"path": [
 								"admin",
-								"ro"
+								"regionalOffice"
 							]
 						}
 					},
@@ -322,7 +322,7 @@
 					"response": []
 				},
 				{
-					"name": "Get Tickets (RO)",
+					"name": "Get Tickets (REGIONAL_OFFICE)",
 					"request": {
 						"method": "GET",
 						"header": [
@@ -333,20 +333,20 @@
 							}
 						],
 						"url": {
-							"raw": "{{base_url}}/tickets/ro",
+							"raw": "{{base_url}}/tickets/regionalOffice",
 							"host": [
 								"{{base_url}}"
 							],
 							"path": [
 								"tickets",
-								"ro"
+								"regionalOffice"
 							]
 						}
 					},
 					"response": []
 				},
 				{
-					"name": "Get Tickets (HO)",
+					"name": "Get Tickets (HEAD_OFFICE)",
 					"request": {
 						"method": "GET",
 						"header": [
@@ -357,13 +357,13 @@
 							}
 						],
 						"url": {
-							"raw": "{{base_url}}/tickets/ho",
+							"raw": "{{base_url}}/tickets/headOffice",
 							"host": [
 								"{{base_url}}"
 							],
 							"path": [
 								"tickets",
-								"ho"
+								"headOffice"
 							]
 						}
 					},
@@ -504,7 +504,7 @@
 						],
 						"body": {
 							"mode": "raw",
-							"raw": "{\n    \"notes\": \"Escalating to HO as complex issue.\"\n}",
+							"raw": "{\n    \"notes\": \"Escalating to head office as complex issue.\"\n}",
 							"options": {
 								"raw": {
 									"language": "json"

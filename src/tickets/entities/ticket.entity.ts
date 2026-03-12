@@ -41,7 +41,7 @@ export class Ticket {
   @JoinColumn({ name: 'created_by_id' })
   created_by: User;
 
-  @ManyToOne(() => RegionalOffice, (ro) => ro.tickets, { nullable: false })
+  @ManyToOne(() => RegionalOffice, (regionalOffice) => regionalOffice.tickets, { nullable: false })
   @JoinColumn({ name: 'assigned_ro_id' })
   assigned_ro: RegionalOffice;
 

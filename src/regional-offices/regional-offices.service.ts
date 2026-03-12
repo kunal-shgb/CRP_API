@@ -9,15 +9,15 @@ export class RegionalOfficesService {
   constructor(
     @InjectRepository(RegionalOffice)
     private roRepository: Repository<RegionalOffice>,
-  ) {}
+  ) { }
 
   async create(createRoDto: CreateRegionalOfficeDto): Promise<RegionalOffice> {
     const existing = await this.roRepository.findOne({ where: { code: createRoDto.code } });
     if (existing) {
       throw new ConflictException(`Regional Office with code ${createRoDto.code} already exists`);
     }
-    const ro = this.roRepository.create(createRoDto);
-    return this.roRepository.save(ro);
+    const regionalOffice = this.roRepository.create(createRoDto);
+    return this.roRepository.save(regionalOffice);
   }
 
   async findAll(): Promise<RegionalOffice[]> {

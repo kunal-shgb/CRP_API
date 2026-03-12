@@ -22,7 +22,7 @@ export class TicketsService {
     @InjectRepository(TicketAttachment)
     private attachmentRepository: Repository<TicketAttachment>,
     private usersService: UsersService,
-  ) {}
+  ) { }
 
   async create(createTicketDto: CreateTicketDto, creator: User): Promise<Ticket> {
     // 1. Uniqueness Validation
@@ -35,17 +35,17 @@ export class TicketsService {
       }
     }
 
-    // 2. Resolve User relations (Branch -> RO mapping)
-    // Refresh user to get branch and ro relations
+    // 2. Resolve User relations (Branch -> REGIONAL_OFFICE mapping)
+    // Refresh user to get branch and regionalOffice relations
     const user = await this.usersService.findOne(creator.id);
-    if (!user || !user.branch || !user.branch.ro) {
+    if (!user || !user.branch || !user.branch.regionalOffice) {
       throw new ForbiddenException('User must be associated with a branch mapped to a Regional Office to raise tickets');
     }
 
     const ticket = this.ticketRepository.create({
       ...createTicketDto,
       created_by: user,
-      assigned_ro: user.branch.ro,
+      assigned_ro: user.branch.regionalOffice,
       status: TicketStatus.OPEN,
       current_level: TicketLevel.BRANCH,
     });
@@ -71,7 +71,7 @@ export class TicketsService {
 
   async findAllForHO(productType: string) {
     return this.ticketRepository.find({
-      where: { current_level: TicketLevel.HO, product_type: productType as any },
+      where: { current_level: TicketLevel.HEAD_OFFICE, product_type: productType as any },
       relations: ['created_by', 'assigned_ro'],
       order: { created_at: 'DESC' },
     });
@@ -105,7 +105,7 @@ export class TicketsService {
 
   async escalateToHO(id: number, notes: string) {
     const ticket = await this.findOne(id);
-    ticket.current_level = TicketLevel.HO;
+    ticket.current_level = TicketLevel.HEAD_OFFICE;
     ticket.status = TicketStatus.ESCALATED_HO;
     ticket.resolution_notes = notes; // Escalation notes
     return this.ticketRepository.save(ticket);
@@ -115,7 +115,7 @@ export class TicketsService {
     const query = this.ticketRepository.createQueryBuilder('ticket')
       .leftJoinAndSelect('ticket.created_by', 'user')
       .leftJoinAndSelect('user.branch', 'branch')
-      .leftJoinAndSelect('ticket.assigned_ro', 'ro');
+      .leftJoinAndSelect('ticket.assigned_ro', 'regionalOffice');
 
     if (filters.utr_rrn) {
       query.andWhere('ticket.utr_rrn = :utr', { utr: filters.utr_rrn });
@@ -127,7 +127,7 @@ export class TicketsService {
       query.andWhere('branch.id = :branchId', { branchId: filters.branch_id });
     }
     if (filters.ro_id) {
-      query.andWhere('ro.id = :roId', { roId: filters.ro_id });
+      query.andWhere('regionalOffice.id = :roId', { roId: filters.ro_id });
     }
     if (filters.status) {
       query.andWhere('ticket.status = :status', { status: filters.status });

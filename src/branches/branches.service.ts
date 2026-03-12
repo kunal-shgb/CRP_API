@@ -11,7 +11,7 @@ export class BranchesService {
     @InjectRepository(Branch)
     private branchRepository: Repository<Branch>,
     private roService: RegionalOfficesService,
-  ) {}
+  ) { }
 
   async create(createBranchDto: CreateBranchDto): Promise<Branch> {
     const existing = await this.branchRepository.findOne({ where: { code: createBranchDto.code } });
@@ -19,23 +19,23 @@ export class BranchesService {
       throw new ConflictException(`Branch with code ${createBranchDto.code} already exists`);
     }
 
-    const ro = await this.roService.findOne(createBranchDto.roId);
-    if (!ro) {
+    const regionalOffice = await this.roService.findOne(createBranchDto.roId);
+    if (!regionalOffice) {
       throw new NotFoundException(`Regional Office with ID ${createBranchDto.roId} not found`);
     }
 
     const branch = this.branchRepository.create({
       ...createBranchDto,
-      ro,
+      regionalOffice,
     });
     return this.branchRepository.save(branch);
   }
 
   async findAll(): Promise<Branch[]> {
-    return this.branchRepository.find({ relations: ['ro'] });
+    return this.branchRepository.find({ relations: ['regionalOffice'] });
   }
 
   async findOne(id: number): Promise<Branch | null> {
-    return this.branchRepository.findOne({ where: { id }, relations: ['ro'] });
+    return this.branchRepository.findOne({ where: { id }, relations: ['regionalOffice'] });
   }
 }

@@ -15,7 +15,7 @@ export class UsersService {
     private usersRepository: Repository<User>,
     private branchesService: BranchesService,
     private roService: RegionalOfficesService,
-  ) {}
+  ) { }
 
   async create(createUserDto: CreateUserDto): Promise<User> {
     const existing = await this.findByUsername(createUserDto.username);
@@ -34,32 +34,44 @@ export class UsersService {
     });
 
     if (createUserDto.role === UserRole.BRANCH && createUserDto.branchId) {
+      const existingBranchUser = await this.usersRepository.findOne({
+        where: { branch: { id: createUserDto.branchId } }
+      });
+      if (existingBranchUser) {
+        throw new ConflictException('Only one user can be created for this Branch/REGIONAL_OFFICE.');
+      }
       const branch = await this.branchesService.findOne(createUserDto.branchId);
       if (!branch) throw new NotFoundException('Branch not found');
       user.branch = branch;
     }
 
     if (createUserDto.role === UserRole.REGIONAL_OFFICE && createUserDto.roId) {
-      const ro = await this.roService.findOne(createUserDto.roId);
-      if (!ro) throw new NotFoundException('Regional Office not found');
-      user.ro = ro;
+      const existingROUser = await this.usersRepository.findOne({
+        where: { regionalOffice: { id: createUserDto.roId } }
+      });
+      if (existingROUser) {
+        throw new ConflictException('Only one user can be created for this Branch/REGIONAL_OFFICE.');
+      }
+      const regionalOffice = await this.roService.findOne(createUserDto.roId);
+      if (!regionalOffice) throw new NotFoundException('Regional Office not found');
+      user.regionalOffice = regionalOffice;
     }
 
     return this.usersRepository.save(user);
   }
 
   async findAll(): Promise<User[]> {
-    return this.usersRepository.find({ relations: ['branch', 'ro'] });
+    return this.usersRepository.find({ relations: ['branch', 'regionalOffice'] });
   }
 
   async findOne(id: number): Promise<User | null> {
-    return this.usersRepository.findOne({ where: { id }, relations: ['branch', 'ro'] });
+    return this.usersRepository.findOne({ where: { id }, relations: ['branch', 'regionalOffice'] });
   }
 
   async findByUsername(username: string): Promise<User | null> {
-    return this.usersRepository.findOne({ 
+    return this.usersRepository.findOne({
       where: { username },
-      relations: ['branch', 'ro'] 
+      relations: ['branch', 'regionalOffice']
     });
   }
 }
