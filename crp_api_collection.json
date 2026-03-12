@@ -1,0 +1,617 @@
+{
+	"info": {
+		"_postman_id": "7ad4d7c3-3e1a-4ea1-9efb-33de2f7a9e1e",
+		"name": "CRP API",
+		"description": "Postman collection for the Complaint Resolution Portal API.",
+		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+	},
+	"item": [
+		{
+			"name": "Auth",
+			"item": [
+				{
+					"name": "Login",
+					"request": {
+						"method": "POST",
+						"header": [],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"username\": \"admin\",\n    \"password\": \"password123\"\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{base_url}}/auth/login",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"auth",
+								"login"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Get Profile",
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{token}}",
+								"type": "text"
+							}
+						],
+						"url": {
+							"raw": "{{base_url}}/auth/profile",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"auth",
+								"profile"
+							]
+						}
+					},
+					"response": []
+				}
+			]
+		},
+		{
+			"name": "Admin",
+			"item": [
+				{
+					"name": "Create Regional Office",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{token}}",
+								"type": "text"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"name\": \"Mumbai Regional Office\",\n    \"code\": \"RO001\"\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{base_url}}/admin/ro",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"admin",
+								"ro"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Get All ROs",
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{token}}",
+								"type": "text"
+							}
+						],
+						"url": {
+							"raw": "{{base_url}}/admin/ro",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"admin",
+								"ro"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Create Branch",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{token}}",
+								"type": "text"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"name\": \"Andheri Branch\",\n    \"code\": \"BR001\",\n    \"roId\": 1\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{base_url}}/admin/branch",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"admin",
+								"branch"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Get All Branches",
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{token}}",
+								"type": "text"
+							}
+						],
+						"url": {
+							"raw": "{{base_url}}/admin/branch",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"admin",
+								"branch"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Create User",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{token}}",
+								"type": "text"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"username\": \"testuser\",\n    \"password\": \"password123\",\n    \"role\": \"branch\",\n    \"branchId\": 1\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{base_url}}/admin/user",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"admin",
+								"user"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Get All Users",
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{token}}",
+								"type": "text"
+							}
+						],
+						"url": {
+							"raw": "{{base_url}}/admin/user",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"admin",
+								"user"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Get Analytics",
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{token}}",
+								"type": "text"
+							}
+						],
+						"url": {
+							"raw": "{{base_url}}/admin/analytics",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"admin",
+								"analytics"
+							]
+						}
+					},
+					"response": []
+				}
+			]
+		},
+		{
+			"name": "Tickets",
+			"item": [
+				{
+					"name": "Create Ticket",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{token}}",
+								"type": "text"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"utr_rrn\": \"1234567890\",\n    \"account_number\": \"9876543210\",\n    \"product_type\": \"IMPS\",\n    \"issue_type\": \"Transaction Failed\",\n    \"description\": \"Amount deducted but not received\"\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{base_url}}/tickets",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"tickets"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Get Tickets (Branch)",
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{token}}",
+								"type": "text"
+							}
+						],
+						"url": {
+							"raw": "{{base_url}}/tickets/branch",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"tickets",
+								"branch"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Get Tickets (RO)",
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{token}}",
+								"type": "text"
+							}
+						],
+						"url": {
+							"raw": "{{base_url}}/tickets/ro",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"tickets",
+								"ro"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Get Tickets (HO)",
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{token}}",
+								"type": "text"
+							}
+						],
+						"url": {
+							"raw": "{{base_url}}/tickets/ho",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"tickets",
+								"ho"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Search Tickets",
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{token}}",
+								"type": "text"
+							}
+						],
+						"url": {
+							"raw": "{{base_url}}/tickets/search?account_number=9876543210",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"tickets",
+								"search"
+							],
+							"query": [
+								{
+									"key": "account_number",
+									"value": "9876543210"
+								}
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Get Ticket by ID",
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{token}}",
+								"type": "text"
+							}
+						],
+						"url": {
+							"raw": "{{base_url}}/tickets/1",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"tickets",
+								"1"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Add Comment",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{token}}",
+								"type": "text"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"comment\": \"Looking into this issue.\"\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{base_url}}/tickets/1/comments",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"tickets",
+								"1",
+								"comments"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Resolve Ticket",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{token}}",
+								"type": "text"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"notes\": \"Issue resolved by crediting back original amount.\"\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{base_url}}/tickets/1/resolve",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"tickets",
+								"1",
+								"resolve"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Escalate Ticket",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{token}}",
+								"type": "text"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"notes\": \"Escalating to HO as complex issue.\"\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{base_url}}/tickets/1/escalate",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"tickets",
+								"1",
+								"escalate"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Upload Attachment",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{token}}",
+								"type": "text"
+							}
+						],
+						"body": {
+							"mode": "formdata",
+							"formdata": [
+								{
+									"key": "file",
+									"type": "file",
+									"src": []
+								}
+							]
+						},
+						"url": {
+							"raw": "{{base_url}}/tickets/1/attachments",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"tickets",
+								"1",
+								"attachments"
+							]
+						}
+					},
+					"response": []
+				}
+			]
+		},
+		{
+			"name": "App",
+			"item": [
+				{
+					"name": "Hello World",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{base_url}}",
+							"host": [
+								"{{base_url}}"
+							]
+						}
+					},
+					"response": []
+				}
+			]
+		}
+	],
+	"event": [
+		{
+			"listen": "prerequest",
+			"script": {
+				"type": "text/javascript",
+				"exec": [
+					""
+				]
+			}
+		},
+		{
+			"listen": "test",
+			"script": {
+				"type": "text/javascript",
+				"exec": [
+					""
+				]
+			}
+		}
+	],
+	"variable": [
+		{
+			"key": "base_url",
+			"value": "http://localhost:3001",
+			"type": "string"
+		},
+		{
+			"key": "token",
+			"value": "",
+			"type": "string"
+		}
+	]
+}
