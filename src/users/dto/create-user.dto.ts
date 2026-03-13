@@ -25,4 +25,8 @@ export class CreateUserDto {
   @IsEnum(ProductType)
   @IsOptional()
   productType?: ProductType;
+
+  @IsString()
+  @IsOptional()
+  email?: string;
 }

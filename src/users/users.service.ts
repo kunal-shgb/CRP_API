@@ -26,11 +26,16 @@ export class UsersService {
     const salt = await bcrypt.genSalt();
     const hashedPassword = await bcrypt.hash(createUserDto.password, salt);
 
+    if (createUserDto.role !== UserRole.ADMIN && !createUserDto.email) {
+      throw new ConflictException('Email is mandatory for this user role.');
+    }
+
     const user = this.usersRepository.create({
       username: createUserDto.username,
       password: hashedPassword,
       role: createUserDto.role,
       productType: createUserDto.productType,
+      email: createUserDto.email,
     });
 
     if (createUserDto.role === UserRole.BRANCH && createUserDto.branchId) {

@@ -15,9 +15,11 @@ export class User {
   @Column()
   password?: string;
 
+  @Column({ unique: true, nullable: true })
+  email?: string;
+
   @Column({ type: 'enum', enum: UserRole, default: UserRole.BRANCH })
   role: UserRole;
-
 
   @OneToOne(() => Branch, (branch) => branch.id, { nullable: true })
   @JoinColumn({ name: 'branch_id' })

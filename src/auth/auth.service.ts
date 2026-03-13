@@ -26,6 +26,7 @@ export class AuthService {
       username: user.username,
       sub: user.id,
       role: user.role,
+      email: user.email,
       productType: user.product_type,
       branch: user.branch ? {
         id: user.branch.id,
