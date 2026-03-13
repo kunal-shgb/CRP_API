@@ -18,6 +18,7 @@ export class User {
   @Column({ type: 'enum', enum: UserRole, default: UserRole.BRANCH })
   role: UserRole;
 
+
   @OneToOne(() => Branch, (branch) => branch.id, { nullable: true })
   @JoinColumn({ name: 'branch_id' })
   branch: Branch;
@@ -27,5 +28,5 @@ export class User {
   regionalOffice: RegionalOffice;
 
   @Column({ type: 'enum', enum: ProductType, nullable: true })
-  product_type: ProductType;
+  productType: ProductType;
 }

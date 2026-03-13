@@ -20,13 +20,23 @@ export class AuthService {
   }
 
   async login(user: any) {
+    const effectiveRO = user.regionalOffice || user.branch?.regionalOffice;
+
     const payload = {
       username: user.username,
       sub: user.id,
       role: user.role,
-      branchId: user.branch?.id,
-      roId: user.regionalOffice?.id,
-      productType: user.product_type
+      productType: user.product_type,
+      branch: user.branch ? {
+        id: user.branch.id,
+        name: user.branch.name,
+        code: user.branch.code,
+      } : null,
+      regionalOffice: effectiveRO ? {
+        id: effectiveRO.id,
+        name: effectiveRO.name,
+        code: effectiveRO.code,
+      } : null,
     };
     return {
       access_token: this.jwtService.sign(payload),

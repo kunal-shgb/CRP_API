@@ -30,7 +30,7 @@ export class UsersService {
       username: createUserDto.username,
       password: hashedPassword,
       role: createUserDto.role,
-      product_type: createUserDto.productType,
+      productType: createUserDto.productType,
     });
 
     if (createUserDto.role === UserRole.BRANCH && createUserDto.branchId) {
@@ -61,17 +61,17 @@ export class UsersService {
   }
 
   async findAll(): Promise<User[]> {
-    return this.usersRepository.find({ relations: ['branch', 'regionalOffice'] });
+    return this.usersRepository.find({ relations: ['branch', 'regionalOffice', 'branch.regionalOffice'] });
   }
 
   async findOne(id: number): Promise<User | null> {
-    return this.usersRepository.findOne({ where: { id }, relations: ['branch', 'regionalOffice'] });
+    return this.usersRepository.findOne({ where: { id }, relations: ['branch', 'regionalOffice', 'branch.regionalOffice'] });
   }
 
   async findByUsername(username: string): Promise<User | null> {
     return this.usersRepository.findOne({
       where: { username },
-      relations: ['branch', 'regionalOffice']
+      relations: ['branch', 'regionalOffice', 'branch.regionalOffice']
     });
   }
 }
