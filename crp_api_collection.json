@@ -278,7 +278,7 @@
 						],
 						"body": {
 							"mode": "raw",
-							"raw": "{\n    \"utr_rrn\": \"1234567890\",\n    \"account_number\": \"9876543210\",\n    \"product_type\": \"IMPS\",\n    \"issue_type\": \"Transaction Failed\",\n    \"description\": \"Amount deducted but not received\"\n}",
+							"raw": "{\n    \"utr_rrn\": \"1234567890\",\n    \"account_number\": \"9876543210\",\n    \"product_type\": \"IMPS\",\n    \"ticket_type\": \"Transaction Failed\",\n    \"description\": \"Amount deducted but not received\"\n}",
 							"options": {
 								"raw": {
 									"language": "json"

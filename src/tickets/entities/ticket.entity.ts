@@ -2,7 +2,7 @@ import { Entity, PrimaryGeneratedColumn, Column, ManyToOne, JoinColumn, CreateDa
 import { User } from '../../users/entities/user.entity';
 import { RegionalOffice } from '../../regional-offices/entities/regional-office.entity';
 import { ProductType } from '../../common/enums/product-type.enum';
-import { IssueType } from '../../common/enums/issue-type.enum';
+import { TicketType } from '../../common/enums/ticket-type.enum';
 import { TicketStatus } from '../../common/enums/ticket-status.enum';
 import { TicketLevel } from '../../common/enums/ticket-level.enum';
 import { TicketComment } from './ticket-comment.entity';
@@ -19,11 +19,17 @@ export class Ticket {
   @Column()
   account_number: string;
 
+  @Column({ type: 'date', nullable: true })
+  transaction_date: Date;
+
+  @Column({ type: 'decimal', precision: 12, scale: 2, nullable: true })
+  transaction_amount: number;
+
   @Column({ type: 'enum', enum: ProductType })
   product_type: ProductType;
 
-  @Column({ type: 'enum', enum: IssueType })
-  issue_type: IssueType;
+  @Column({ type: 'enum', enum: TicketType })
+  ticket_type: TicketType;
 
   @Column({ type: 'text' })
   description: string;

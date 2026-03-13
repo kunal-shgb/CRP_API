@@ -7,7 +7,7 @@ import { TicketAttachment } from './entities/ticket-attachment.entity';
 import { CreateTicketDto } from './dto/create-ticket.dto';
 import { CreateCommentDto } from './dto/create-comment.dto';
 import { User } from '../users/entities/user.entity';
-import { IssueType } from '../common/enums/issue-type.enum';
+import { TicketType } from '../common/enums/ticket-type.enum';
 import { TicketStatus } from '../common/enums/ticket-status.enum';
 import { TicketLevel } from '../common/enums/ticket-level.enum';
 import { UsersService } from '../users/users.service';
@@ -26,7 +26,7 @@ export class TicketsService {
 
   async create(createTicketDto: CreateTicketDto, creator: User): Promise<Ticket> {
     // 1. Uniqueness Validation
-    if (createTicketDto.issue_type !== IssueType.OTHERS && createTicketDto.utr_rrn) {
+    if (createTicketDto.ticket_type !== TicketType.OTHERS && createTicketDto.utr_rrn) {
       const existing = await this.ticketRepository.findOne({
         where: { utr_rrn: createTicketDto.utr_rrn, status: TicketStatus.OPEN },
       });
