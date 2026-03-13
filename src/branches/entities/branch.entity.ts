@@ -17,6 +17,6 @@ export class Branch {
   @JoinColumn({ name: 'ro_id' })
   regionalOffice: RegionalOffice;
 
-  @OneToMany(() => User, (user) => user.branch)
+  @OneToMany(() => User, (user) => user.branch, { cascade: true, onDelete: 'CASCADE' })
   users: User[];
 }

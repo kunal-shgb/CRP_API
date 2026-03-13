@@ -8,8 +8,11 @@ import { RegionalOfficesService } from '../regional-offices/regional-offices.ser
 import { BranchesService } from '../branches/branches.service';
 import { UsersService } from '../users/users.service';
 import { CreateRegionalOfficeDto } from '../regional-offices/dto/create-regional-office.dto';
+import { UpdateRegionalOfficeDto } from '../regional-offices/dto/update-regional-office.dto';
 import { CreateBranchDto } from '../branches/dto/create-branch.dto';
+import { UpdateBranchDto } from '../branches/dto/update-branch.dto';
 import { CreateUserDto } from '../users/dto/create-user.dto';
+import { UpdateUserDto } from '../users/dto/update-user.dto';
 
 @Injectable()
 export class AdminService {
@@ -44,6 +47,31 @@ export class AdminService {
 
   async getAllUsers() {
     return this.usersService.findAll();
+  }
+
+  // Update & Delete overrides returning from respective services
+  async updateRO(id: number, dto: UpdateRegionalOfficeDto) {
+    return this.roService.update(id, dto);
+  }
+
+  async removeRO(id: number) {
+    return this.roService.remove(id);
+  }
+
+  async updateBranch(id: number, dto: UpdateBranchDto) {
+    return this.branchesService.update(id, dto);
+  }
+
+  async removeBranch(id: number) {
+    return this.branchesService.remove(id);
+  }
+
+  async updateUser(id: number, dto: UpdateUserDto) {
+    return this.usersService.update(id, dto);
+  }
+
+  async removeUser(id: number) {
+    return this.usersService.remove(id);
   }
 
   // Analytics

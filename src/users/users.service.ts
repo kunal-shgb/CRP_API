@@ -3,6 +3,7 @@ import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { User } from './entities/user.entity';
 import { CreateUserDto } from './dto/create-user.dto';
+import { UpdateUserDto } from './dto/update-user.dto';
 import * as bcrypt from 'bcryptjs';
 import { BranchesService } from '../branches/branches.service';
 import { RegionalOfficesService } from '../regional-offices/regional-offices.service';
@@ -78,5 +79,70 @@ export class UsersService {
       where: { username },
       relations: ['branch', 'regionalOffice', 'branch.regionalOffice']
     });
+  }
+
+  async update(id: number, updateUserDto: UpdateUserDto): Promise<User> {
+    const user = await this.usersRepository.findOne({ where: { id }, relations: ['branch', 'regionalOffice'] });
+    if (!user) {
+      throw new NotFoundException(`User with ID ${id} not found`);
+    }
+
+    if (updateUserDto.username && updateUserDto.username !== user.username) {
+      const existingUsername = await this.findByUsername(updateUserDto.username);
+      if (existingUsername) {
+        throw new ConflictException(`User with username ${updateUserDto.username} already exists`);
+      }
+    }
+
+    if (updateUserDto.password) {
+      const salt = await bcrypt.genSalt();
+      updateUserDto.password = await bcrypt.hash(updateUserDto.password, salt);
+    }
+
+    if (updateUserDto.role === UserRole.BRANCH && updateUserDto.branchId) {
+      if (!user.branch || user.branch.id !== updateUserDto.branchId) {
+        const existingBranchUser = await this.usersRepository.findOne({
+          where: { branch: { id: updateUserDto.branchId } }
+        });
+        if (existingBranchUser) {
+          throw new ConflictException('Only one user can be created for this Branch.');
+        }
+        const branch = await this.branchesService.findOne(updateUserDto.branchId);
+        if (!branch) throw new NotFoundException('Branch not found');
+        user.branch = branch;
+      }
+    }
+
+    if (updateUserDto.role === UserRole.REGIONAL_OFFICE && updateUserDto.roId) {
+       if (!user.regionalOffice || user.regionalOffice.id !== updateUserDto.roId) {
+         const existingROUser = await this.usersRepository.findOne({
+           where: { regionalOffice: { id: updateUserDto.roId } }
+         });
+         if (existingROUser) {
+           throw new ConflictException('Only one user can be created for this Regional Office.');
+         }
+         const regionalOffice = await this.roService.findOne(updateUserDto.roId);
+         if (!regionalOffice) throw new NotFoundException('Regional Office not found');
+         user.regionalOffice = regionalOffice;
+       }
+    }
+
+    const { branchId, roId, ...updateData } = updateUserDto;
+    
+    Object.assign(user, updateData);
+    
+    // Validate role/email requirement
+    if (user.role !== UserRole.ADMIN && !user.email) {
+      throw new ConflictException('Email is mandatory for this user role.');
+    }
+
+    return this.usersRepository.save(user);
+  }
+
+  async remove(id: number): Promise<void> {
+    const result = await this.usersRepository.delete(id);
+    if (result.affected === 0) {
+      throw new NotFoundException(`User with ID ${id} not found`);
+    }
   }
 }
