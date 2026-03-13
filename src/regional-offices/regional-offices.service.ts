@@ -9,45 +9,45 @@ import { UpdateRegionalOfficeDto } from './dto/update-regional-office.dto';
 export class RegionalOfficesService {
   constructor(
     @InjectRepository(RegionalOffice)
-    private roRepository: Repository<RegionalOffice>,
+    private regionalOfficeRepository: Repository<RegionalOffice>,
   ) { }
 
   async create(createRoDto: CreateRegionalOfficeDto): Promise<RegionalOffice> {
-    const existing = await this.roRepository.findOne({ where: { code: createRoDto.code } });
+    const existing = await this.regionalOfficeRepository.findOne({ where: { code: createRoDto.code } });
     if (existing) {
       throw new ConflictException(`Regional Office with code ${createRoDto.code} already exists`);
     }
-    const regionalOffice = this.roRepository.create(createRoDto);
-    return this.roRepository.save(regionalOffice);
+    const regionalOffice = this.regionalOfficeRepository.create(createRoDto);
+    return this.regionalOfficeRepository.save(regionalOffice);
   }
 
   async findAll(): Promise<RegionalOffice[]> {
-    return this.roRepository.find({ relations: ['branches'] });
+    return this.regionalOfficeRepository.find({ relations: ['branches'] });
   }
 
   async findOne(id: number): Promise<RegionalOffice | null> {
-    return this.roRepository.findOne({ where: { id }, relations: ['branches'] });
+    return this.regionalOfficeRepository.findOne({ where: { id }, relations: ['branches'] });
   }
 
-  async update(id: number, updateRoDto: UpdateRegionalOfficeDto): Promise<RegionalOffice> {
-    const ro = await this.findOne(id);
-    if (!ro) {
+  async update(id: number, updateRegionalOfficeDto: UpdateRegionalOfficeDto): Promise<RegionalOffice> {
+    const regionalOffice = await this.findOne(id);
+    if (!regionalOffice) {
       throw new NotFoundException(`Regional Office with ID ${id} not found`);
     }
 
-    if (updateRoDto.code && updateRoDto.code !== ro.code) {
-      const existing = await this.roRepository.findOne({ where: { code: updateRoDto.code } });
+    if (updateRegionalOfficeDto.code && updateRegionalOfficeDto.code !== regionalOffice.code) {
+      const existing = await this.regionalOfficeRepository.findOne({ where: { code: updateRegionalOfficeDto.code } });
       if (existing) {
-        throw new ConflictException(`Regional Office with code ${updateRoDto.code} already exists`);
+        throw new ConflictException(`Regional Office with code ${updateRegionalOfficeDto.code} already exists`);
       }
     }
 
-    Object.assign(ro, updateRoDto);
-    return this.roRepository.save(ro);
+    Object.assign(regionalOffice, updateRegionalOfficeDto);
+    return this.regionalOfficeRepository.save(regionalOffice);
   }
 
   async remove(id: number): Promise<void> {
-    const result = await this.roRepository.delete(id);
+    const result = await this.regionalOfficeRepository.delete(id);
     if (result.affected === 0) {
       throw new NotFoundException(`Regional Office with ID ${id} not found`);
     }

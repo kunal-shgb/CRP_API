@@ -20,6 +20,6 @@ export class RegionalOffice {
   @OneToMany(() => User, (user) => user.regionalOffice, { cascade: true, onDelete: 'CASCADE' })
   users: User[];
 
-  @OneToMany(() => Ticket, (ticket) => ticket.assigned_ro)
+  @OneToMany(() => Ticket, (ticket) => ticket.assigned_regionalOffice)
   tickets: Ticket[];
 }

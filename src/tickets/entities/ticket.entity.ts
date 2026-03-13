@@ -48,8 +48,8 @@ export class Ticket {
   created_by: User;
 
   @ManyToOne(() => RegionalOffice, (regionalOffice) => regionalOffice.tickets, { nullable: false })
-  @JoinColumn({ name: 'assigned_ro_id' })
-  assigned_ro: RegionalOffice;
+  @JoinColumn({ name: 'assigned_regionalOffice_id' })
+  assigned_regionalOffice: RegionalOffice;
 
   @OneToMany(() => TicketComment, (comment) => comment.ticket)
   comments: TicketComment[];

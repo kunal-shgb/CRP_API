@@ -19,18 +19,18 @@ export class AdminService {
   constructor(
     @InjectRepository(Ticket)
     private ticketRepository: Repository<Ticket>,
-    private roService: RegionalOfficesService,
+    private regionalOfficeService: RegionalOfficesService,
     private branchesService: BranchesService,
     private usersService: UsersService,
   ) { }
 
   // Management Delegation
-  async createRO(dto: CreateRegionalOfficeDto) {
-    return this.roService.create(dto);
+  async createRegionalOffice(dto: CreateRegionalOfficeDto) {
+    return this.regionalOfficeService.create(dto);
   }
 
-  async getAllROs() {
-    return this.roService.findAll();
+  async getAllRegionalOffices() {
+    return this.regionalOfficeService.findAll();
   }
 
   async createBranch(dto: CreateBranchDto) {
@@ -50,12 +50,12 @@ export class AdminService {
   }
 
   // Update & Delete overrides returning from respective services
-  async updateRO(id: number, dto: UpdateRegionalOfficeDto) {
-    return this.roService.update(id, dto);
+  async updateRegionalOffice(id: number, dto: UpdateRegionalOfficeDto) {
+    return this.regionalOfficeService.update(id, dto);
   }
 
-  async removeRO(id: number) {
-    return this.roService.remove(id);
+  async removeRegionalOffice(id: number) {
+    return this.regionalOfficeService.remove(id);
   }
 
   async updateBranch(id: number, dto: UpdateBranchDto) {
@@ -80,8 +80,8 @@ export class AdminService {
     const totalClosed = await this.ticketRepository.count({ where: { status: TicketStatus.CLOSED } });
 
     const pendingAtBranch = await this.ticketRepository.count({ where: { current_level: TicketLevel.BRANCH, status: TicketStatus.OPEN } });
-    const pendingAtRO = await this.ticketRepository.count({ where: { current_level: TicketLevel.REGIONAL_OFFICE, status: TicketStatus.OPEN } });
-    const pendingAtHO = await this.ticketRepository.count({ where: { current_level: TicketLevel.HEAD_OFFICE, status: TicketStatus.OPEN } });
+    const pendingAtRegionalOffice = await this.ticketRepository.count({ where: { current_level: TicketLevel.REGIONAL_OFFICE, status: TicketStatus.OPEN } });
+    const pendingAtHeadOffice = await this.ticketRepository.count({ where: { current_level: TicketLevel.HEAD_OFFICE, status: TicketStatus.OPEN } });
 
     const productWiseStats = await this.ticketRepository
       .createQueryBuilder('ticket')
@@ -95,8 +95,8 @@ export class AdminService {
       totalClosed,
       pending: {
         branch: pendingAtBranch,
-        regionalOffice: pendingAtRO,
-        headOffice: pendingAtHO,
+        regionalOffice: pendingAtRegionalOffice,
+        headOffice: pendingAtHeadOffice,
       },
       productWiseStats,
     };

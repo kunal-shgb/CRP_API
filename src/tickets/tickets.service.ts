@@ -45,7 +45,7 @@ export class TicketsService {
     const ticket = this.ticketRepository.create({
       ...createTicketDto,
       created_by: user,
-      assigned_ro: user.branch.regionalOffice,
+      assigned_regionalOffice: user.branch.regionalOffice,
       status: TicketStatus.OPEN,
       current_level: TicketLevel.BRANCH,
     });
@@ -56,23 +56,23 @@ export class TicketsService {
   async findAllForBranch(branchId: number) {
     return this.ticketRepository.find({
       where: { created_by: { branch: { id: branchId } } },
-      relations: ['created_by', 'assigned_ro'],
+      relations: ['created_by', 'assigned_regionalOffice'],
       order: { created_at: 'DESC' },
     });
   }
 
-  async findAllForRO(roId: number) {
+  async findAllForRegionalOffice(regionalOfficeId: number) {
     return this.ticketRepository.find({
-      where: { assigned_ro: { id: roId } },
-      relations: ['created_by', 'assigned_ro'],
+      where: { assigned_regionalOffice: { id: regionalOfficeId } },
+      relations: ['created_by', 'assigned_regionalOffice'],
       order: { created_at: 'DESC' },
     });
   }
 
-  async findAllForHO(productType: string) {
+  async findAllForHeadOffice(productType: string) {
     return this.ticketRepository.find({
       where: { current_level: TicketLevel.HEAD_OFFICE, product_type: productType as any },
-      relations: ['created_by', 'assigned_ro'],
+      relations: ['created_by', 'assigned_regionalOffice'],
       order: { created_at: 'DESC' },
     });
   }
@@ -80,7 +80,7 @@ export class TicketsService {
   async findOne(id: number) {
     const ticket = await this.ticketRepository.findOne({
       where: { id },
-      relations: ['created_by', 'assigned_ro', 'comments', 'comments.user', 'attachments'],
+      relations: ['created_by', 'assigned_regionalOffice', 'comments', 'comments.user', 'attachments'],
     });
     if (!ticket) throw new NotFoundException('Ticket not found');
     return ticket;
@@ -103,10 +103,10 @@ export class TicketsService {
     return this.ticketRepository.save(ticket);
   }
 
-  async escalateToHO(id: number, notes: string) {
+  async escalateToHeadOffice(id: number, notes: string) {
     const ticket = await this.findOne(id);
     ticket.current_level = TicketLevel.HEAD_OFFICE;
-    ticket.status = TicketStatus.ESCALATED_HO;
+    ticket.status = TicketStatus.ESCALATED_HEAD_OFFICE;
     ticket.resolution_notes = notes; // Escalation notes
     return this.ticketRepository.save(ticket);
   }
@@ -115,7 +115,7 @@ export class TicketsService {
     const query = this.ticketRepository.createQueryBuilder('ticket')
       .leftJoinAndSelect('ticket.created_by', 'user')
       .leftJoinAndSelect('user.branch', 'branch')
-      .leftJoinAndSelect('ticket.assigned_ro', 'regionalOffice');
+      .leftJoinAndSelect('ticket.assigned_regionalOffice', 'regionalOffice');
 
     if (filters.utr_rrn) {
       query.andWhere('ticket.utr_rrn = :utr', { utr: filters.utr_rrn });
@@ -126,8 +126,8 @@ export class TicketsService {
     if (filters.branch_id) {
       query.andWhere('branch.id = :branchId', { branchId: filters.branch_id });
     }
-    if (filters.ro_id) {
-      query.andWhere('regionalOffice.id = :roId', { roId: filters.ro_id });
+    if (filters.regionalOffice_id) {
+      query.andWhere('regionalOffice.id = :regionalOfficeId', { regionalOfficeId: filters.regionalOffice_id });
     }
     if (filters.status) {
       query.andWhere('ticket.status = :status', { status: filters.status });

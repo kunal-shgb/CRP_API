@@ -11,7 +11,7 @@ export class BranchesService {
   constructor(
     @InjectRepository(Branch)
     private branchRepository: Repository<Branch>,
-    private roService: RegionalOfficesService,
+    private regionalOfficeService: RegionalOfficesService,
   ) { }
 
   async create(createBranchDto: CreateBranchDto): Promise<Branch> {
@@ -20,9 +20,9 @@ export class BranchesService {
       throw new ConflictException(`Branch with code ${createBranchDto.code} already exists`);
     }
 
-    const regionalOffice = await this.roService.findOne(createBranchDto.roId);
+    const regionalOffice = await this.regionalOfficeService.findOne(createBranchDto.regionalOfficeId);
     if (!regionalOffice) {
-      throw new NotFoundException(`Regional Office with ID ${createBranchDto.roId} not found`);
+      throw new NotFoundException(`Regional Office with ID ${createBranchDto.regionalOfficeId} not found`);
     }
 
     const branch = this.branchRepository.create({
@@ -53,15 +53,15 @@ export class BranchesService {
       }
     }
 
-    if (updateBranchDto.roId && updateBranchDto.roId !== branch.regionalOffice?.id) {
-       const regionalOffice = await this.roService.findOne(updateBranchDto.roId);
+    if (updateBranchDto.regionalOfficeId && updateBranchDto.regionalOfficeId !== branch.regionalOffice?.id) {
+       const regionalOffice = await this.regionalOfficeService.findOne(updateBranchDto.regionalOfficeId);
        if (!regionalOffice) {
-         throw new NotFoundException(`Regional Office with ID ${updateBranchDto.roId} not found`);
+         throw new NotFoundException(`Regional Office with ID ${updateBranchDto.regionalOfficeId} not found`);
        }
        branch.regionalOffice = regionalOffice;
     }
 
-    const { roId, ...updateData } = updateBranchDto;
+    const { regionalOfficeId, ...updateData } = updateBranchDto;
     Object.assign(branch, updateData);
 
     return this.branchRepository.save(branch);

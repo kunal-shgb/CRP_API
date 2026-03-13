@@ -11,5 +11,5 @@ export class CreateBranchDto {
 
   @IsNumber()
   @IsNotEmpty()
-  roId: number;
+  regionalOfficeId: number;
 }

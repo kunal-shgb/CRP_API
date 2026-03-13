@@ -14,7 +14,7 @@ export class Branch {
   code: string;
 
   @ManyToOne(() => RegionalOffice, (regionalOffice) => regionalOffice.branches, { nullable: false })
-  @JoinColumn({ name: 'ro_id' })
+  @JoinColumn({ name: 'regionalOffice_id' })
   regionalOffice: RegionalOffice;
 
   @OneToMany(() => User, (user) => user.branch, { cascade: true, onDelete: 'CASCADE' })

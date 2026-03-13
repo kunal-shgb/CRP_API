@@ -1,5 +1,5 @@
 export enum TicketStatus {
   OPEN = 'OPEN',
-  ESCALATED_HO = 'ESCALATED_HO',
+  ESCALATED_HEAD_OFFICE = 'ESCALATED_HEAD_OFFICE',
   CLOSED = 'CLOSED',
 }

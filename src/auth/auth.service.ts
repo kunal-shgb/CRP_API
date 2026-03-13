@@ -20,7 +20,7 @@ export class AuthService {
   }
 
   async login(user: any) {
-    const effectiveRO = user.regionalOffice || user.branch?.regionalOffice;
+    const effectiveRegionalOffice = user.regionalOffice || user.branch?.regionalOffice;
 
     const payload = {
       username: user.username,
@@ -33,10 +33,10 @@ export class AuthService {
         name: user.branch.name,
         code: user.branch.code,
       } : null,
-      regionalOffice: effectiveRO ? {
-        id: effectiveRO.id,
-        name: effectiveRO.name,
-        code: effectiveRO.code,
+      regionalOffice: effectiveRegionalOffice ? {
+        id: effectiveRegionalOffice.id,
+        name: effectiveRegionalOffice.name,
+        code: effectiveRegionalOffice.code,
       } : null,
     };
     return {

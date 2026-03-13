@@ -20,7 +20,7 @@ export class CreateUserDto {
 
   @IsNumber()
   @IsOptional()
-  roId?: number;
+  regionalOfficeId?: number;
 
   @IsEnum(ProductType)
   @IsOptional()

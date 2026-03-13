@@ -18,23 +18,23 @@ export class AdminController {
   constructor(private readonly adminService: AdminService) { }
 
   @Post('regionalOffice')
-  async createRO(@Body() dto: CreateRegionalOfficeDto) {
-    return this.adminService.createRO(dto);
+  async createRegionalOffice(@Body() dto: CreateRegionalOfficeDto) {
+    return this.adminService.createRegionalOffice(dto);
   }
 
   @Get('regionalOffice')
-  async getAllROs() {
-    return this.adminService.getAllROs();
+  async getAllRegionalOffices() {
+    return this.adminService.getAllRegionalOffices();
   }
 
   @Patch('regionalOffice/:id')
-  async updateRO(@Param('id') id: string, @Body() dto: UpdateRegionalOfficeDto) {
-    return this.adminService.updateRO(+id, dto);
+  async updateRegionalOffice(@Param('id') id: string, @Body() dto: UpdateRegionalOfficeDto) {
+    return this.adminService.updateRegionalOffice(+id, dto);
   }
 
   @Delete('regionalOffice/:id')
-  async removeRO(@Param('id') id: string) {
-    return this.adminService.removeRO(+id);
+  async removeRegionalOffice(@Param('id') id: string) {
+    return this.adminService.removeRegionalOffice(+id);
   }
 
   @Post('branch')

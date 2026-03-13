@@ -29,14 +29,14 @@ export class TicketsController {
 
   @Get('regionalOffice')
   @Roles(UserRole.REGIONAL_OFFICE)
-  async findAllForRO(@Request() req) {
-    return this.ticketsService.findAllForRO(req.user.roId);
+  async findAllForRegionalOffice(@Request() req) {
+    return this.ticketsService.findAllForRegionalOffice(req.user.regionalOfficeId);
   }
 
   @Get('headOffice')
   @Roles(UserRole.HEAD_OFFICE)
-  async findAllForHO(@Request() req) {
-    return this.ticketsService.findAllForHO(req.user.productType);
+  async findAllForHeadOffice(@Request() req) {
+    return this.ticketsService.findAllForHeadOffice(req.user.productType);
   }
 
   @Get('search')
@@ -63,7 +63,7 @@ export class TicketsController {
   @Post(':id/escalate')
   @Roles(UserRole.REGIONAL_OFFICE)
   async escalate(@Param('id') id: string, @Body('notes') notes: string) {
-    return this.ticketsService.escalateToHO(+id, notes);
+    return this.ticketsService.escalateToHeadOffice(+id, notes);
   }
 
   @Post(':id/attachments')

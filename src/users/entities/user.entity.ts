@@ -26,7 +26,7 @@ export class User {
   branch: Branch;
 
   @OneToOne(() => RegionalOffice, (regionalOffice) => regionalOffice.id, { nullable: true })
-  @JoinColumn({ name: 'ro_id' })
+  @JoinColumn({ name: 'regionalOffice_id' })
   regionalOffice: RegionalOffice;
 
   @Column({ type: 'enum', enum: ProductType, nullable: true })

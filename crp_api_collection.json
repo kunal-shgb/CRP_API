@@ -99,7 +99,7 @@
 					"response": []
 				},
 				{
-					"name": "Get All ROs",
+					"name": "Get All Regional Offices",
 					"request": {
 						"method": "GET",
 						"header": [
@@ -135,7 +135,7 @@
 						],
 						"body": {
 							"mode": "raw",
-							"raw": "{\n    \"name\": \"Andheri Branch\",\n    \"code\": \"BR001\",\n    \"roId\": 1\n}",
+							"raw": "{\n    \"name\": \"Andheri Branch\",\n    \"code\": \"BR001\",\n    \"regionalOfficeId\": 1\n}",
 							"options": {
 								"raw": {
 									"language": "json"

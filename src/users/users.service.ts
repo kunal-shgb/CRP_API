@@ -15,7 +15,7 @@ export class UsersService {
     @InjectRepository(User)
     private usersRepository: Repository<User>,
     private branchesService: BranchesService,
-    private roService: RegionalOfficesService,
+    private regionalOfficeService: RegionalOfficesService,
   ) { }
 
   async create(createUserDto: CreateUserDto): Promise<User> {
@@ -51,14 +51,14 @@ export class UsersService {
       user.branch = branch;
     }
 
-    if (createUserDto.role === UserRole.REGIONAL_OFFICE && createUserDto.roId) {
+    if (createUserDto.role === UserRole.REGIONAL_OFFICE && createUserDto.regionalOfficeId) {
       const existingROUser = await this.usersRepository.findOne({
-        where: { regionalOffice: { id: createUserDto.roId } }
+        where: { regionalOffice: { id: createUserDto.regionalOfficeId } }
       });
       if (existingROUser) {
         throw new ConflictException('Only one user can be created for this Branch/REGIONAL_OFFICE.');
       }
-      const regionalOffice = await this.roService.findOne(createUserDto.roId);
+      const regionalOffice = await this.regionalOfficeService.findOne(createUserDto.regionalOfficeId);
       if (!regionalOffice) throw new NotFoundException('Regional Office not found');
       user.regionalOffice = regionalOffice;
     }
@@ -113,21 +113,21 @@ export class UsersService {
       }
     }
 
-    if (updateUserDto.role === UserRole.REGIONAL_OFFICE && updateUserDto.roId) {
-       if (!user.regionalOffice || user.regionalOffice.id !== updateUserDto.roId) {
+    if (updateUserDto.role === UserRole.REGIONAL_OFFICE && updateUserDto.regionalOfficeId) {
+       if (!user.regionalOffice || user.regionalOffice.id !== updateUserDto.regionalOfficeId) {
          const existingROUser = await this.usersRepository.findOne({
-           where: { regionalOffice: { id: updateUserDto.roId } }
+           where: { regionalOffice: { id: updateUserDto.regionalOfficeId } }
          });
          if (existingROUser) {
            throw new ConflictException('Only one user can be created for this Regional Office.');
          }
-         const regionalOffice = await this.roService.findOne(updateUserDto.roId);
+         const regionalOffice = await this.regionalOfficeService.findOne(updateUserDto.regionalOfficeId);
          if (!regionalOffice) throw new NotFoundException('Regional Office not found');
          user.regionalOffice = regionalOffice;
        }
     }
 
-    const { branchId, roId, ...updateData } = updateUserDto;
+    const { branchId, regionalOfficeId, ...updateData } = updateUserDto;
     
     Object.assign(user, updateData);
     
