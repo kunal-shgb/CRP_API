@@ -4,13 +4,14 @@ import { Repository } from 'typeorm';
 import { RegionalOffice } from './entities/regional-office.entity';
 import { CreateRegionalOfficeDto } from './dto/create-regional-office.dto';
 import { UpdateRegionalOfficeDto } from './dto/update-regional-office.dto';
+import { UserRole } from '../common/enums/user-role.enum';
 
 @Injectable()
 export class RegionalOfficesService {
   constructor(
     @InjectRepository(RegionalOffice)
     private regionalOfficeRepository: Repository<RegionalOffice>,
-  ) { }
+  ) {}
 
   async create(createRoDto: CreateRegionalOfficeDto): Promise<RegionalOffice> {
     const existing = await this.regionalOfficeRepository.findOne({ where: { code: createRoDto.code } });
@@ -23,6 +24,18 @@ export class RegionalOfficesService {
 
   async findAll(): Promise<RegionalOffice[]> {
     return this.regionalOfficeRepository.find({ relations: ['branches'] });
+  }
+
+  async findAllByRole(user: any): Promise<RegionalOffice[]> {
+    if (user.role === UserRole.ADMIN) {
+      return this.findAll();
+    }
+    // REGIONAL_OFFICE user — return only their own RO
+    if (user.regionalOffice?.id) {
+      const ro = await this.findOne(user.regionalOffice.id);
+      return ro ? [ro] : [];
+    }
+    return [];
   }
 
   async findOne(id: number): Promise<RegionalOffice | null> {

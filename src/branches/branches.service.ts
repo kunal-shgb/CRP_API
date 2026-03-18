@@ -5,6 +5,7 @@ import { Branch } from './entities/branch.entity';
 import { CreateBranchDto } from './dto/create-branch.dto';
 import { UpdateBranchDto } from './dto/update-branch.dto';
 import { RegionalOfficesService } from '../regional-offices/regional-offices.service';
+import { UserRole } from '../common/enums/user-role.enum';
 
 @Injectable()
 export class BranchesService {
@@ -12,7 +13,7 @@ export class BranchesService {
     @InjectRepository(Branch)
     private branchRepository: Repository<Branch>,
     private regionalOfficeService: RegionalOfficesService,
-  ) { }
+  ) {}
 
   async create(createBranchDto: CreateBranchDto): Promise<Branch> {
     const existing = await this.branchRepository.findOne({ where: { code: createBranchDto.code } });
@@ -36,6 +37,25 @@ export class BranchesService {
     return this.branchRepository.find({ relations: ['regionalOffice'] });
   }
 
+  async findAllByRole(user: any): Promise<Branch[]> {
+    if (user.role === UserRole.ADMIN) {
+      return this.findAll();
+    }
+    // REGIONAL_OFFICE user — return branches under their RO
+    if (user.role === UserRole.REGIONAL_OFFICE && user.regionalOffice?.id) {
+      return this.branchRepository.find({
+        where: { regionalOffice: { id: user.regionalOffice.id } },
+        relations: ['regionalOffice'],
+      });
+    }
+    // BRANCH user — return only their own branch
+    if (user.role === UserRole.BRANCH && user.branch?.id) {
+      const branch = await this.findOne(user.branch.id);
+      return branch ? [branch] : [];
+    }
+    return [];
+  }
+
   async findOne(id: number): Promise<Branch | null> {
     return this.branchRepository.findOne({ where: { id }, relations: ['regionalOffice'] });
   }
@@ -54,11 +74,11 @@ export class BranchesService {
     }
 
     if (updateBranchDto.regionalOfficeId && updateBranchDto.regionalOfficeId !== branch.regionalOffice?.id) {
-       const regionalOffice = await this.regionalOfficeService.findOne(updateBranchDto.regionalOfficeId);
-       if (!regionalOffice) {
-         throw new NotFoundException(`Regional Office with ID ${updateBranchDto.regionalOfficeId} not found`);
-       }
-       branch.regionalOffice = regionalOffice;
+      const regionalOffice = await this.regionalOfficeService.findOne(updateBranchDto.regionalOfficeId);
+      if (!regionalOffice) {
+        throw new NotFoundException(`Regional Office with ID ${updateBranchDto.regionalOfficeId} not found`);
+      }
+      branch.regionalOffice = regionalOffice;
     }
 
     const { regionalOfficeId, ...updateData } = updateBranchDto;

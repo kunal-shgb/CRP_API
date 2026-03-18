@@ -2,7 +2,7 @@
     "info": {
         "_postman_id": "7ad4d7c3-3e1a-4ea1-9efb-33de2f7a9e1e",
         "name": "CRP API",
-        "description": "Postman collection for the Complaint Resolution Portal API.",
+        "description": "Postman collection for the Complaint Resolution Portal API. Feature-based modular architecture with RBAC.",
         "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
     },
     "item": [
@@ -63,7 +63,8 @@
             ]
         },
         {
-            "name": "Admin",
+            "name": "Regional Offices",
+            "description": "Unified /regional-offices endpoints. POST/PATCH/DELETE: ADMIN only. GET: ADMIN, REGIONAL_OFFICE (filtered by role).",
             "item": [
                 {
                     "name": "Create Regional Office",
@@ -86,13 +87,12 @@
                             }
                         },
                         "url": {
-                            "raw": "{{base_url}}/admin/regionalOffice",
+                            "raw": "{{base_url}}/regional-offices",
                             "host": [
                                 "{{base_url}}"
                             ],
                             "path": [
-                                "admin",
-                                "regionalOffice"
+                                "regional-offices"
                             ]
                         }
                     },
@@ -110,53 +110,19 @@
                             }
                         ],
                         "url": {
-                            "raw": "{{base_url}}/admin/regionalOffice",
+                            "raw": "{{base_url}}/regional-offices",
                             "host": [
                                 "{{base_url}}"
                             ],
                             "path": [
-                                "admin",
-                                "regionalOffice"
+                                "regional-offices"
                             ]
                         }
                     },
                     "response": []
                 },
                 {
-                    "name": "Create Branch",
-                    "request": {
-                        "method": "POST",
-                        "header": [
-                            {
-                                "key": "Authorization",
-                                "value": "Bearer {{token}}",
-                                "type": "text"
-                            }
-                        ],
-                        "body": {
-                            "mode": "raw",
-                            "raw": "{\n    \"name\": \"Andheri Branch\",\n    \"code\": \"BR001\",\n    \"regionalOfficeId\": 1\n}",
-                            "options": {
-                                "raw": {
-                                    "language": "json"
-                                }
-                            }
-                        },
-                        "url": {
-                            "raw": "{{base_url}}/admin/branch",
-                            "host": [
-                                "{{base_url}}"
-                            ],
-                            "path": [
-                                "admin",
-                                "branch"
-                            ]
-                        }
-                    },
-                    "response": []
-                },
-                {
-                    "name": "Get All Branches",
+                    "name": "Get Regional Office by ID",
                     "request": {
                         "method": "GET",
                         "header": [
@@ -167,94 +133,13 @@
                             }
                         ],
                         "url": {
-                            "raw": "{{base_url}}/admin/branch",
+                            "raw": "{{base_url}}/regional-offices/1",
                             "host": [
                                 "{{base_url}}"
                             ],
                             "path": [
-                                "admin",
-                                "branch"
-                            ]
-                        }
-                    },
-                    "response": []
-                },
-                {
-                    "name": "Create User",
-                    "request": {
-                        "method": "POST",
-                        "header": [
-                            {
-                                "key": "Authorization",
-                                "value": "Bearer {{token}}",
-                                "type": "text"
-                            }
-                        ],
-                        "body": {
-                            "mode": "raw",
-                            "raw": "{\n    \"username\": \"testuser\",\n    \"password\": \"password123\",\n    \"role\": \"branch\",\n    \"branchId\": 1\n}",
-                            "options": {
-                                "raw": {
-                                    "language": "json"
-                                }
-                            }
-                        },
-                        "url": {
-                            "raw": "{{base_url}}/admin/user",
-                            "host": [
-                                "{{base_url}}"
-                            ],
-                            "path": [
-                                "admin",
-                                "user"
-                            ]
-                        }
-                    },
-                    "response": []
-                },
-                {
-                    "name": "Get All Users",
-                    "request": {
-                        "method": "GET",
-                        "header": [
-                            {
-                                "key": "Authorization",
-                                "value": "Bearer {{token}}",
-                                "type": "text"
-                            }
-                        ],
-                        "url": {
-                            "raw": "{{base_url}}/admin/user",
-                            "host": [
-                                "{{base_url}}"
-                            ],
-                            "path": [
-                                "admin",
-                                "user"
-                            ]
-                        }
-                    },
-                    "response": []
-                },
-                {
-                    "name": "Get Analytics",
-                    "request": {
-                        "method": "GET",
-                        "header": [
-                            {
-                                "key": "Authorization",
-                                "value": "Bearer {{token}}",
-                                "type": "text"
-                            }
-                        ],
-                        "url": {
-                            "raw": "{{base_url}}/admin/analytics",
-                            "host": [
-                                "{{base_url}}"
-                            ],
-                            "path": [
-                                "admin",
-                                "analytics"
+                                "regional-offices",
+                                "1"
                             ]
                         }
                     },
@@ -281,13 +166,12 @@
                             }
                         },
                         "url": {
-                            "raw": "{{base_url}}/admin/regionalOffice/1",
+                            "raw": "{{base_url}}/regional-offices/1",
                             "host": [
                                 "{{base_url}}"
                             ],
                             "path": [
-                                "admin",
-                                "regionalOffice",
+                                "regional-offices",
                                 "1"
                             ]
                         }
@@ -306,13 +190,97 @@
                             }
                         ],
                         "url": {
-                            "raw": "{{base_url}}/admin/regionalOffice/1",
+                            "raw": "{{base_url}}/regional-offices/1",
                             "host": [
                                 "{{base_url}}"
                             ],
                             "path": [
-                                "admin",
-                                "regionalOffice",
+                                "regional-offices",
+                                "1"
+                            ]
+                        }
+                    },
+                    "response": []
+                }
+            ]
+        },
+        {
+            "name": "Branches",
+            "description": "Unified /branches endpoints. POST/PATCH/DELETE: ADMIN only. GET: ADMIN, REGIONAL_OFFICE, BRANCH (filtered by role).",
+            "item": [
+                {
+                    "name": "Create Branch",
+                    "request": {
+                        "method": "POST",
+                        "header": [
+                            {
+                                "key": "Authorization",
+                                "value": "Bearer {{token}}",
+                                "type": "text"
+                            }
+                        ],
+                        "body": {
+                            "mode": "raw",
+                            "raw": "{\n    \"name\": \"Andheri Branch\",\n    \"code\": \"BR001\",\n    \"regionalOfficeId\": 1\n}",
+                            "options": {
+                                "raw": {
+                                    "language": "json"
+                                }
+                            }
+                        },
+                        "url": {
+                            "raw": "{{base_url}}/branches",
+                            "host": [
+                                "{{base_url}}"
+                            ],
+                            "path": [
+                                "branches"
+                            ]
+                        }
+                    },
+                    "response": []
+                },
+                {
+                    "name": "Get All Branches",
+                    "request": {
+                        "method": "GET",
+                        "header": [
+                            {
+                                "key": "Authorization",
+                                "value": "Bearer {{token}}",
+                                "type": "text"
+                            }
+                        ],
+                        "url": {
+                            "raw": "{{base_url}}/branches",
+                            "host": [
+                                "{{base_url}}"
+                            ],
+                            "path": [
+                                "branches"
+                            ]
+                        }
+                    },
+                    "response": []
+                },
+                {
+                    "name": "Get Branch by ID",
+                    "request": {
+                        "method": "GET",
+                        "header": [
+                            {
+                                "key": "Authorization",
+                                "value": "Bearer {{token}}",
+                                "type": "text"
+                            }
+                        ],
+                        "url": {
+                            "raw": "{{base_url}}/branches/1",
+                            "host": [
+                                "{{base_url}}"
+                            ],
+                            "path": [
+                                "branches",
                                 "1"
                             ]
                         }
@@ -340,13 +308,12 @@
                             }
                         },
                         "url": {
-                            "raw": "{{base_url}}/admin/branch/1",
+                            "raw": "{{base_url}}/branches/1",
                             "host": [
                                 "{{base_url}}"
                             ],
                             "path": [
-                                "admin",
-                                "branch",
+                                "branches",
                                 "1"
                             ]
                         }
@@ -365,13 +332,97 @@
                             }
                         ],
                         "url": {
-                            "raw": "{{base_url}}/admin/branch/1",
+                            "raw": "{{base_url}}/branches/1",
                             "host": [
                                 "{{base_url}}"
                             ],
                             "path": [
-                                "admin",
-                                "branch",
+                                "branches",
+                                "1"
+                            ]
+                        }
+                    },
+                    "response": []
+                }
+            ]
+        },
+        {
+            "name": "Users",
+            "description": "Unified /users endpoints. POST/PATCH/DELETE: ADMIN only. GET all: ADMIN, REGIONAL_OFFICE (filtered by role). GET by ID: ADMIN, REGIONAL_OFFICE, BRANCH.",
+            "item": [
+                {
+                    "name": "Create User",
+                    "request": {
+                        "method": "POST",
+                        "header": [
+                            {
+                                "key": "Authorization",
+                                "value": "Bearer {{token}}",
+                                "type": "text"
+                            }
+                        ],
+                        "body": {
+                            "mode": "raw",
+                            "raw": "{\n    \"username\": \"testuser\",\n    \"password\": \"password123\",\n    \"role\": \"BRANCH\",\n    \"branchId\": 1,\n    \"email\": \"testuser@example.com\"\n}",
+                            "options": {
+                                "raw": {
+                                    "language": "json"
+                                }
+                            }
+                        },
+                        "url": {
+                            "raw": "{{base_url}}/users",
+                            "host": [
+                                "{{base_url}}"
+                            ],
+                            "path": [
+                                "users"
+                            ]
+                        }
+                    },
+                    "response": []
+                },
+                {
+                    "name": "Get All Users",
+                    "request": {
+                        "method": "GET",
+                        "header": [
+                            {
+                                "key": "Authorization",
+                                "value": "Bearer {{token}}",
+                                "type": "text"
+                            }
+                        ],
+                        "url": {
+                            "raw": "{{base_url}}/users",
+                            "host": [
+                                "{{base_url}}"
+                            ],
+                            "path": [
+                                "users"
+                            ]
+                        }
+                    },
+                    "response": []
+                },
+                {
+                    "name": "Get User by ID",
+                    "request": {
+                        "method": "GET",
+                        "header": [
+                            {
+                                "key": "Authorization",
+                                "value": "Bearer {{token}}",
+                                "type": "text"
+                            }
+                        ],
+                        "url": {
+                            "raw": "{{base_url}}/users/1",
+                            "host": [
+                                "{{base_url}}"
+                            ],
+                            "path": [
+                                "users",
                                 "1"
                             ]
                         }
@@ -399,13 +450,12 @@
                             }
                         },
                         "url": {
-                            "raw": "{{base_url}}/admin/user/1",
+                            "raw": "{{base_url}}/users/1",
                             "host": [
                                 "{{base_url}}"
                             ],
                             "path": [
-                                "admin",
-                                "user",
+                                "users",
                                 "1"
                             ]
                         }
@@ -424,13 +474,12 @@
                             }
                         ],
                         "url": {
-                            "raw": "{{base_url}}/admin/user/1",
+                            "raw": "{{base_url}}/users/1",
                             "host": [
                                 "{{base_url}}"
                             ],
                             "path": [
-                                "admin",
-                                "user",
+                                "users",
                                 "1"
                             ]
                         }
@@ -441,6 +490,7 @@
         },
         {
             "name": "Tickets",
+            "description": "Unified /tickets endpoints. POST: BRANCH only. GET all: all roles (filtered by role in service). Resolve: RO, HEAD_OFFICE. Escalate: RO only.",
             "item": [
                 {
                     "name": "Create Ticket",
@@ -475,7 +525,7 @@
                     "response": []
                 },
                 {
-                    "name": "Get Tickets (Branch)",
+                    "name": "Get All Tickets",
                     "request": {
                         "method": "GET",
                         "header": [
@@ -486,61 +536,12 @@
                             }
                         ],
                         "url": {
-                            "raw": "{{base_url}}/tickets/branch",
+                            "raw": "{{base_url}}/tickets",
                             "host": [
                                 "{{base_url}}"
                             ],
                             "path": [
-                                "tickets",
-                                "branch"
-                            ]
-                        }
-                    },
-                    "response": []
-                },
-                {
-                    "name": "Get Tickets (REGIONAL_OFFICE)",
-                    "request": {
-                        "method": "GET",
-                        "header": [
-                            {
-                                "key": "Authorization",
-                                "value": "Bearer {{token}}",
-                                "type": "text"
-                            }
-                        ],
-                        "url": {
-                            "raw": "{{base_url}}/tickets/regionalOffice",
-                            "host": [
-                                "{{base_url}}"
-                            ],
-                            "path": [
-                                "tickets",
-                                "regionalOffice"
-                            ]
-                        }
-                    },
-                    "response": []
-                },
-                {
-                    "name": "Get Tickets (HEAD_OFFICE)",
-                    "request": {
-                        "method": "GET",
-                        "header": [
-                            {
-                                "key": "Authorization",
-                                "value": "Bearer {{token}}",
-                                "type": "text"
-                            }
-                        ],
-                        "url": {
-                            "raw": "{{base_url}}/tickets/headOffice",
-                            "host": [
-                                "{{base_url}}"
-                            ],
-                            "path": [
-                                "tickets",
-                                "headOffice"
+                                "tickets"
                             ]
                         }
                     },
@@ -732,6 +733,36 @@
                                 "tickets",
                                 "1",
                                 "attachments"
+                            ]
+                        }
+                    },
+                    "response": []
+                }
+            ]
+        },
+        {
+            "name": "Admin",
+            "description": "Admin-exclusive endpoints. Only GET /admin/analytics remains — all shared CRUD moved to feature modules.",
+            "item": [
+                {
+                    "name": "Get Analytics",
+                    "request": {
+                        "method": "GET",
+                        "header": [
+                            {
+                                "key": "Authorization",
+                                "value": "Bearer {{token}}",
+                                "type": "text"
+                            }
+                        ],
+                        "url": {
+                            "raw": "{{base_url}}/admin/analytics",
+                            "host": [
+                                "{{base_url}}"
+                            ],
+                            "path": [
+                                "admin",
+                                "analytics"
                             ]
                         }
                     },

@@ -11,6 +11,7 @@ import { TicketType } from '../common/enums/ticket-type.enum';
 import { TicketStatus } from '../common/enums/ticket-status.enum';
 import { TicketLevel } from '../common/enums/ticket-level.enum';
 import { UsersService } from '../users/users.service';
+import { UserRole } from '../common/enums/user-role.enum';
 
 @Injectable()
 export class TicketsService {
@@ -51,6 +52,25 @@ export class TicketsService {
     });
 
     return this.ticketRepository.save(ticket);
+  }
+
+  async findAllByRole(user: any) {
+    if (user.role === UserRole.ADMIN) {
+      return this.ticketRepository.find({
+        relations: ['created_by', 'assigned_regionalOffice'],
+        order: { created_at: 'DESC' },
+      });
+    }
+    if (user.role === UserRole.HEAD_OFFICE) {
+      return this.findAllForHeadOffice(user.productType);
+    }
+    if (user.role === UserRole.REGIONAL_OFFICE && user.regionalOffice?.id) {
+      return this.findAllForRegionalOffice(user.regionalOffice.id);
+    }
+    if (user.role === UserRole.BRANCH && user.branch?.id) {
+      return this.findAllForBranch(user.branch.id);
+    }
+    return [];
   }
 
   async findAllForBranch(branchId: number) {

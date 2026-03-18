@@ -70,6 +70,23 @@ export class UsersService {
     return this.usersRepository.find({ relations: ['branch', 'regionalOffice', 'branch.regionalOffice'] });
   }
 
+  async findAllByRole(currentUser: any): Promise<User[]> {
+    if (currentUser.role === UserRole.ADMIN) {
+      return this.findAll();
+    }
+    // REGIONAL_OFFICE user — return users under branches of their RO + users directly assigned to their RO
+    if (currentUser.role === UserRole.REGIONAL_OFFICE && currentUser.regionalOffice?.id) {
+      return this.usersRepository.find({
+        where: [
+          { branch: { regionalOffice: { id: currentUser.regionalOffice.id } } },
+          { regionalOffice: { id: currentUser.regionalOffice.id } },
+        ],
+        relations: ['branch', 'regionalOffice', 'branch.regionalOffice'],
+      });
+    }
+    return [];
+  }
+
   async findOne(id: number): Promise<User | null> {
     return this.usersRepository.findOne({ where: { id }, relations: ['branch', 'regionalOffice', 'branch.regionalOffice'] });
   }
