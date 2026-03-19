@@ -1,6 +1,7 @@
 import { IsString, IsNotEmpty, IsEnum, IsOptional, IsDate, IsNumber, ValidateIf } from 'class-validator';
 import { ProductType } from '../../common/enums/product-type.enum';
 import { TicketType } from '../../common/enums/ticket-type.enum';
+import { Type } from 'class-transformer';
 
 export class CreateTicketDto {
 
@@ -10,7 +11,7 @@ export class CreateTicketDto {
   utr_rrn?: string;
 
   @ValidateIf(o => o.ticket_type !== TicketType.OTHERS)
-  @IsDate()
+  @Type(() => Date)
   @IsNotEmpty()
   transaction_date?: Date;
 

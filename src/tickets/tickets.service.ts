@@ -36,17 +36,11 @@ export class TicketsService {
       }
     }
 
-    // 2. Resolve User relations (Branch -> REGIONAL_OFFICE mapping)
-    // Refresh user to get branch and regionalOffice relations
-    const user = await this.usersService.findOne(creator.id);
-    if (!user || !user.branch || !user.branch.regionalOffice) {
-      throw new ForbiddenException('User must be associated with a branch mapped to a Regional Office to raise tickets');
-    }
 
     const ticket = this.ticketRepository.create({
       ...createTicketDto,
-      created_by: user,
-      assigned_regionalOffice: user.branch.regionalOffice,
+      created_by: creator,
+      assigned_regionalOffice: creator.branch.regionalOffice,
       status: TicketStatus.OPEN,
       current_level: TicketLevel.BRANCH,
     });
