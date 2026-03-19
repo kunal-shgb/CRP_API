@@ -25,8 +25,8 @@ export class TicketsController {
 
   @Get()
   @Roles(UserRole.ADMIN, UserRole.HEAD_OFFICE, UserRole.REGIONAL_OFFICE, UserRole.BRANCH)
-  async findAll(@CurrentUser() user: any) {
-    return this.ticketsService.findAllByRole(user);
+  async findAll(@CurrentUser() user: any, @Query('page') page: string, @Query('limit') limit: string) {
+    return this.ticketsService.findAllByRole(user, parseInt(page) || 1, parseInt(limit) || 10);
   }
 
   @Get('search')

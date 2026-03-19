@@ -66,25 +66,39 @@ export class UsersService {
     return this.usersRepository.save(user);
   }
 
-  async findAll(): Promise<User[]> {
-    return this.usersRepository.find({ relations: ['branch', 'regionalOffice', 'branch.regionalOffice'] });
+  async findAll(page: number = 1, limit: number = 10): Promise<any> {
+    const validPage = Math.max(1, page);
+    const validLimit = Math.max(1, limit);
+    const [data, totalRecords] = await this.usersRepository.findAndCount({
+      relations: ['branch', 'regionalOffice', 'branch.regionalOffice'],
+      skip: (validPage - 1) * validLimit,
+      take: validLimit,
+      order: { id: 'DESC' }
+    });
+    return { data, meta: { totalRecords, page: validPage, limit: validLimit, totalPages: Math.ceil(totalRecords / validLimit) } };
   }
 
-  async findAllByRole(currentUser: any): Promise<User[]> {
+  async findAllByRole(currentUser: any, page: number = 1, limit: number = 10): Promise<any> {
     if (currentUser.role === UserRole.ADMIN) {
-      return this.findAll();
+      return this.findAll(page, limit);
     }
     // REGIONAL_OFFICE user — return users under branches of their RO + users directly assigned to their RO
     if (currentUser.role === UserRole.REGIONAL_OFFICE && currentUser.regionalOffice?.id) {
-      return this.usersRepository.find({
+      const validPage = Math.max(1, page);
+      const validLimit = Math.max(1, limit);
+      const [data, totalRecords] = await this.usersRepository.findAndCount({
         where: [
           { branch: { regionalOffice: { id: currentUser.regionalOffice.id } } },
           { regionalOffice: { id: currentUser.regionalOffice.id } },
         ],
         relations: ['branch', 'regionalOffice', 'branch.regionalOffice'],
+        skip: (validPage - 1) * validLimit,
+        take: validLimit,
+        order: { id: 'DESC' }
       });
+      return { data, meta: { totalRecords, page: validPage, limit: validLimit, totalPages: Math.ceil(totalRecords / validLimit) } };
     }
-    return [];
+    return { data: [], meta: { totalRecords: 0, page, limit, totalPages: 0 } };
   }
 
   async findOne(id: number): Promise<User | null> {

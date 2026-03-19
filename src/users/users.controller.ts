@@ -1,4 +1,4 @@
-import { Controller, Get, Post, Body, Patch, Param, Delete, UseGuards } from '@nestjs/common';
+import { Controller, Get, Post, Body, Patch, Param, Delete, UseGuards, Query } from '@nestjs/common';
 import { UsersService } from './users.service';
 import { CreateUserDto } from './dto/create-user.dto';
 import { UpdateUserDto } from './dto/update-user.dto';
@@ -21,8 +21,8 @@ export class UsersController {
 
   @Get()
   @Roles(UserRole.ADMIN, UserRole.REGIONAL_OFFICE)
-  findAll(@CurrentUser() user: any) {
-    return this.usersService.findAllByRole(user);
+  findAll(@CurrentUser() user: any, @Query('page') page: string, @Query('limit') limit: string) {
+    return this.usersService.findAllByRole(user, parseInt(page) || 1, parseInt(limit) || 10);
   }
 
   @Get(':id')

@@ -48,23 +48,63 @@ export class TicketsService {
     return this.ticketRepository.save(ticket);
   }
 
-  async findAllByRole(user: any) {
+  async findAllByRole(user: any, page: number = 1, limit: number = 10) {
+    const query = this.ticketRepository.createQueryBuilder('ticket');
+
     if (user.role === UserRole.ADMIN) {
-      return this.ticketRepository.find({
-        relations: ['created_by', 'assigned_regionalOffice'],
-        order: { created_at: 'DESC' },
-      });
+      // Admin sees all tickets
+    } else if (user.role === UserRole.HEAD_OFFICE) {
+      query.andWhere('ticket.current_level = :level', { level: TicketLevel.HEAD_OFFICE });
+      query.andWhere('ticket.product_type = :productType', { productType: user.productType });
+    } else if (user.role === UserRole.REGIONAL_OFFICE && user.regionalOffice?.id) {
+      query.leftJoin('ticket.assigned_regionalOffice', 'regionalOffice');
+      query.andWhere('regionalOffice.id = :roId', { roId: user.regionalOffice.id });
+    } else if (user.role === UserRole.BRANCH && user.branch?.id) {
+      query.leftJoin('ticket.created_by', 'creator');
+      query.leftJoin('creator.branch', 'branch');
+      query.andWhere('branch.id = :branchId', { branchId: user.branch.id });
+    } else {
+      return { data: [], meta: { totalRecords: 0, page, limit, totalPages: 0, productMetrics: [] } };
     }
-    if (user.role === UserRole.HEAD_OFFICE) {
-      return this.findAllForHeadOffice(user.productType);
-    }
-    if (user.role === UserRole.REGIONAL_OFFICE && user.regionalOffice?.id) {
-      return this.findAllForRegionalOffice(user.regionalOffice.id);
-    }
-    if (user.role === UserRole.BRANCH && user.branch?.id) {
-      return this.findAllForBranch(user.branch.id);
-    }
-    return [];
+
+    const aggQuery = query.clone();
+    aggQuery.select('ticket.product_type', 'productType')
+      .addSelect('COUNT(DISTINCT ticket.id)', 'totalCount')
+      .addSelect(`SUM(CASE WHEN ticket.status = '${TicketStatus.OPEN}' THEN 1 ELSE 0 END)`, 'openCount')
+      .addSelect(`SUM(CASE WHEN ticket.status = '${TicketStatus.CLOSED}' THEN 1 ELSE 0 END)`, 'closedCount')
+      .groupBy('ticket.product_type');
+    
+    const rawAgg = await aggQuery.getRawMany();
+    const productMetrics = rawAgg.map(item => ({
+      productType: item.productType,
+      totalCount: Number(item.totalCount) || 0,
+      openCount: Number(item.openCount) || 0,
+      closedCount: Number(item.closedCount) || 0,
+    }));
+
+    query.leftJoinAndSelect('ticket.created_by', 'createdBy');
+    query.leftJoinAndSelect('ticket.assigned_regionalOffice', 'assignedRO');
+    
+    const validLimit = Math.max(1, limit);
+    const validPage = Math.max(1, page);
+    const totalRecords = await query.getCount();
+    
+    query.skip((validPage - 1) * validLimit)
+         .take(validLimit)
+         .orderBy('ticket.created_at', 'DESC');
+         
+    const data = await query.getMany();
+
+    return {
+      data,
+      meta: {
+        totalRecords,
+        page: validPage,
+        limit: validLimit,
+        totalPages: Math.ceil(totalRecords / validLimit),
+        productMetrics
+      }
+    };
   }
 
   async findAllForBranch(branchId: number) {
@@ -153,7 +193,44 @@ export class TicketsService {
       });
     }
 
-    return query.getMany();
+    // Get aggregated metrics based on current filters before left joins affect row counts
+    const aggQuery = query.clone();
+    aggQuery.select('ticket.product_type', 'productType')
+      .addSelect('COUNT(DISTINCT ticket.id)', 'totalCount')
+      .addSelect(`SUM(CASE WHEN ticket.status = '${TicketStatus.OPEN}' THEN 1 ELSE 0 END)`, 'openCount')
+      .addSelect(`SUM(CASE WHEN ticket.status = '${TicketStatus.CLOSED}' THEN 1 ELSE 0 END)`, 'closedCount')
+      .groupBy('ticket.product_type');
+    const rawAgg = await aggQuery.getRawMany();
+    const productMetrics = rawAgg.map(item => ({
+      productType: item.productType,
+      totalCount: Number(item.totalCount) || 0,
+      openCount: Number(item.openCount) || 0,
+      closedCount: Number(item.closedCount) || 0,
+    }));
+
+    const page = parseInt(filters.page, 10) || 1;
+    const limit = parseInt(filters.limit, 10) || 10;
+    const validPage = Math.max(1, page);
+    const validLimit = Math.max(1, limit);
+    
+    const totalRecords = await query.getCount();
+    
+    query.skip((validPage - 1) * validLimit)
+         .take(validLimit)
+         .orderBy('ticket.created_at', 'DESC');
+
+    const data = await query.getMany();
+
+    return {
+      data,
+      meta: {
+        totalRecords,
+        page: validPage,
+        limit: validLimit,
+        totalPages: Math.ceil(totalRecords / validLimit),
+        productMetrics
+      }
+    };
   }
 
   async uploadAttachment(ticketId: number, file: Express.Multer.File, user: User) {

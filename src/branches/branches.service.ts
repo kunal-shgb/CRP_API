@@ -33,27 +33,43 @@ export class BranchesService {
     return this.branchRepository.save(branch);
   }
 
-  async findAll(): Promise<Branch[]> {
-    return this.branchRepository.find({ relations: ['regionalOffice'] });
+  async findAll(page: number = 1, limit: number = 10): Promise<any> {
+    const validPage = Math.max(1, page);
+    const validLimit = Math.max(1, limit);
+    const [data, totalRecords] = await this.branchRepository.findAndCount({
+      relations: ['regionalOffice'],
+      skip: (validPage - 1) * validLimit,
+      take: validLimit,
+      order: { id: 'DESC' }
+    });
+    return { data, meta: { totalRecords, page: validPage, limit: validLimit, totalPages: Math.ceil(totalRecords / validLimit) } };
   }
 
-  async findAllByRole(user: any): Promise<Branch[]> {
+  async findAllByRole(user: any, page: number = 1, limit: number = 10): Promise<any> {
     if (user.role === UserRole.ADMIN) {
-      return this.findAll();
+      return this.findAll(page, limit);
     }
+    const validPage = Math.max(1, page);
+    const validLimit = Math.max(1, limit);
+    
     // REGIONAL_OFFICE user — return branches under their RO
     if (user.role === UserRole.REGIONAL_OFFICE && user.regionalOffice?.id) {
-      return this.branchRepository.find({
+      const [data, totalRecords] = await this.branchRepository.findAndCount({
         where: { regionalOffice: { id: user.regionalOffice.id } },
         relations: ['regionalOffice'],
+        skip: (validPage - 1) * validLimit,
+        take: validLimit,
+        order: { id: 'DESC' }
       });
+      return { data, meta: { totalRecords, page: validPage, limit: validLimit, totalPages: Math.ceil(totalRecords / validLimit) } };
     }
     // BRANCH user — return only their own branch
     if (user.role === UserRole.BRANCH && user.branch?.id) {
       const branch = await this.findOne(user.branch.id);
-      return branch ? [branch] : [];
+      const data = branch ? [branch] : [];
+      return { data, meta: { totalRecords: data.length, page: 1, limit: validLimit, totalPages: 1 } };
     }
-    return [];
+    return { data: [], meta: { totalRecords: 0, page: validPage, limit: validLimit, totalPages: 0 } };
   }
 
   async findOne(id: number): Promise<Branch | null> {

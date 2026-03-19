@@ -1,4 +1,4 @@
-import { Controller, Get, Post, Body, Patch, Param, Delete, UseGuards } from '@nestjs/common';
+import { Controller, Get, Post, Body, Patch, Param, Delete, UseGuards, Query } from '@nestjs/common';
 import { RegionalOfficesService } from './regional-offices.service';
 import { CreateRegionalOfficeDto } from './dto/create-regional-office.dto';
 import { UpdateRegionalOfficeDto } from './dto/update-regional-office.dto';
@@ -21,8 +21,8 @@ export class RegionalOfficesController {
 
   @Get()
   @Roles(UserRole.ADMIN, UserRole.REGIONAL_OFFICE)
-  findAll(@CurrentUser() user: any) {
-    return this.regionalOfficesService.findAllByRole(user);
+  findAll(@CurrentUser() user: any, @Query('page') page: string, @Query('limit') limit: string) {
+    return this.regionalOfficesService.findAllByRole(user, parseInt(page) || 1, parseInt(limit) || 10);
   }
 
   @Get(':id')

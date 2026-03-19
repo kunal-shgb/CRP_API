@@ -1,4 +1,4 @@
-import { Controller, Get, Post, Body, Patch, Param, Delete, UseGuards } from '@nestjs/common';
+import { Controller, Get, Post, Body, Patch, Param, Delete, UseGuards, Query } from '@nestjs/common';
 import { BranchesService } from './branches.service';
 import { CreateBranchDto } from './dto/create-branch.dto';
 import { UpdateBranchDto } from './dto/update-branch.dto';
@@ -21,8 +21,8 @@ export class BranchesController {
 
   @Get()
   @Roles(UserRole.ADMIN, UserRole.REGIONAL_OFFICE, UserRole.BRANCH)
-  findAll(@CurrentUser() user: any) {
-    return this.branchesService.findAllByRole(user);
+  findAll(@CurrentUser() user: any, @Query('page') page: string, @Query('limit') limit: string) {
+    return this.branchesService.findAllByRole(user, parseInt(page) || 1, parseInt(limit) || 10);
   }
 
   @Get(':id')
