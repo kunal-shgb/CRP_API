@@ -35,7 +35,7 @@ export class RegionalOfficesService {
   }
 
   async findAllByRole(user: any, page: number = 1, limit: number = 10): Promise<any> {
-    if (user.role === UserRole.ADMIN) {
+    if (user.role === UserRole.ADMIN || user.role === UserRole.HEAD_OFFICE) {
       return this.findAll(page, limit);
     }
     // REGIONAL_OFFICE user — return only their own RO

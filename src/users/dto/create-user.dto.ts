@@ -1,4 +1,4 @@
-import { IsString, IsNotEmpty, IsEnum, IsOptional, IsNumber } from 'class-validator';
+import { IsString, IsNotEmpty, IsEnum, IsOptional, IsNumber, ValidateIf } from 'class-validator';
 import { UserRole } from '../../common/enums/user-role.enum';
 import { ProductType } from '../../common/enums/product-type.enum';
 
@@ -22,8 +22,9 @@ export class CreateUserDto {
   @IsOptional()
   regionalOfficeId?: number;
 
+  @ValidateIf((o) => o.role === UserRole.HEAD_OFFICE)
+  @IsNotEmpty()
   @IsEnum(ProductType)
-  @IsOptional()
   productType?: ProductType;
 
   @IsString()

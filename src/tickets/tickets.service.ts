@@ -50,12 +50,12 @@ export class TicketsService {
 
   async findAllByRole(user: any, page: number = 1, limit: number = 10) {
     const query = this.ticketRepository.createQueryBuilder('ticket');
-
+    console.log("user", user)
     if (user.role === UserRole.ADMIN) {
       // Admin sees all tickets
     } else if (user.role === UserRole.HEAD_OFFICE) {
       query.andWhere('ticket.current_level = :level', { level: TicketLevel.HEAD_OFFICE });
-      query.andWhere('ticket.product_type = :productType', { productType: user.productType });
+      query.andWhere('ticket.product_type = :product_type', { productType: user.productType });
     } else if (user.role === UserRole.REGIONAL_OFFICE && user.regionalOffice?.id) {
       query.leftJoin('ticket.assigned_regionalOffice', 'regionalOffice');
       query.andWhere('regionalOffice.id = :roId', { roId: user.regionalOffice.id });
@@ -66,7 +66,7 @@ export class TicketsService {
     } else {
       return { data: [], meta: { totalRecords: 0, page, limit, totalPages: 0, productMetrics: [] } };
     }
-
+    console.log("query", query.getQuery())
     const aggQuery = query.clone();
     aggQuery.select('ticket.product_type', 'productType')
       .addSelect('COUNT(DISTINCT ticket.id)', 'totalCount')
@@ -105,30 +105,6 @@ export class TicketsService {
         productMetrics
       }
     };
-  }
-
-  async findAllForBranch(branchId: number) {
-    return this.ticketRepository.find({
-      where: { created_by: { branch: { id: branchId } } },
-      relations: ['created_by', 'assigned_regionalOffice'],
-      order: { created_at: 'DESC' },
-    });
-  }
-
-  async findAllForRegionalOffice(regionalOfficeId: number) {
-    return this.ticketRepository.find({
-      where: { assigned_regionalOffice: { id: regionalOfficeId } },
-      relations: ['created_by', 'assigned_regionalOffice'],
-      order: { created_at: 'DESC' },
-    });
-  }
-
-  async findAllForHeadOffice(productType: string) {
-    return this.ticketRepository.find({
-      where: { current_level: TicketLevel.HEAD_OFFICE, product_type: productType as any },
-      relations: ['created_by', 'assigned_regionalOffice'],
-      order: { created_at: 'DESC' },
-    });
   }
 
   async findOne(id: number) {

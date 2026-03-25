@@ -20,13 +20,13 @@ export class RegionalOfficesController {
   }
 
   @Get()
-  @Roles(UserRole.ADMIN, UserRole.REGIONAL_OFFICE)
+  @Roles(UserRole.ADMIN, UserRole.REGIONAL_OFFICE, UserRole.HEAD_OFFICE)
   findAll(@CurrentUser() user: any, @Query('page') page: string, @Query('limit') limit: string) {
     return this.regionalOfficesService.findAllByRole(user, parseInt(page) || 1, parseInt(limit) || 10);
   }
 
   @Get(':id')
-  @Roles(UserRole.ADMIN, UserRole.REGIONAL_OFFICE)
+  @Roles(UserRole.ADMIN, UserRole.REGIONAL_OFFICE, UserRole.HEAD_OFFICE)
   findOne(@Param('id') id: string) {
     return this.regionalOfficesService.findOne(+id);
   }
