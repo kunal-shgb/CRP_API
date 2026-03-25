@@ -1,6 +1,6 @@
-import { Injectable, ConflictException, NotFoundException, ForbiddenException, InternalServerErrorException } from '@nestjs/common';
+import { Injectable, ConflictException, NotFoundException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { Repository, Between } from 'typeorm';
+import { Repository } from 'typeorm';
 import { Ticket } from './entities/ticket.entity';
 import { TicketComment } from './entities/ticket-comment.entity';
 import { TicketAttachment } from './entities/ticket-attachment.entity';
@@ -10,7 +10,6 @@ import { User } from '../users/entities/user.entity';
 import { TicketType } from '../common/enums/ticket-type.enum';
 import { TicketStatus } from '../common/enums/ticket-status.enum';
 import { TicketLevel } from '../common/enums/ticket-level.enum';
-import { UsersService } from '../users/users.service';
 import { UserRole } from '../common/enums/user-role.enum';
 
 @Injectable()
@@ -22,7 +21,6 @@ export class TicketsService {
     private commentRepository: Repository<TicketComment>,
     @InjectRepository(TicketAttachment)
     private attachmentRepository: Repository<TicketAttachment>,
-    private usersService: UsersService,
   ) { }
 
   async create(createTicketDto: CreateTicketDto, creator: User): Promise<Ticket> {
@@ -50,12 +48,11 @@ export class TicketsService {
 
   async findAllByRole(user: any, page: number = 1, limit: number = 10) {
     const query = this.ticketRepository.createQueryBuilder('ticket');
-    console.log("user", user)
     if (user.role === UserRole.ADMIN) {
       // Admin sees all tickets
     } else if (user.role === UserRole.HEAD_OFFICE) {
       query.andWhere('ticket.current_level = :level', { level: TicketLevel.HEAD_OFFICE });
-      query.andWhere('ticket.product_type = :product_type', { productType: user.productType });
+      query.andWhere('ticket.product_type = :productType', { productType: user.productType });
     } else if (user.role === UserRole.REGIONAL_OFFICE && user.regionalOffice?.id) {
       query.leftJoin('ticket.assigned_regionalOffice', 'regionalOffice');
       query.andWhere('regionalOffice.id = :roId', { roId: user.regionalOffice.id });
@@ -66,14 +63,13 @@ export class TicketsService {
     } else {
       return { data: [], meta: { totalRecords: 0, page, limit, totalPages: 0, productMetrics: [] } };
     }
-    console.log("query", query.getQuery())
     const aggQuery = query.clone();
     aggQuery.select('ticket.product_type', 'productType')
       .addSelect('COUNT(DISTINCT ticket.id)', 'totalCount')
       .addSelect(`SUM(CASE WHEN ticket.status = '${TicketStatus.OPEN}' THEN 1 ELSE 0 END)`, 'openCount')
       .addSelect(`SUM(CASE WHEN ticket.status = '${TicketStatus.CLOSED}' THEN 1 ELSE 0 END)`, 'closedCount')
       .groupBy('ticket.product_type');
-    
+
     const rawAgg = await aggQuery.getRawMany();
     const productMetrics = rawAgg.map(item => ({
       productType: item.productType,
@@ -84,15 +80,15 @@ export class TicketsService {
 
     query.leftJoinAndSelect('ticket.created_by', 'createdBy');
     query.leftJoinAndSelect('ticket.assigned_regionalOffice', 'assignedRO');
-    
+
     const validLimit = Math.max(1, limit);
     const validPage = Math.max(1, page);
     const totalRecords = await query.getCount();
-    
+
     query.skip((validPage - 1) * validLimit)
-         .take(validLimit)
-         .orderBy('ticket.created_at', 'DESC');
-         
+      .take(validLimit)
+      .orderBy('ticket.created_at', 'DESC');
+
     const data = await query.getMany();
 
     return {
@@ -188,12 +184,12 @@ export class TicketsService {
     const limit = parseInt(filters.limit, 10) || 10;
     const validPage = Math.max(1, page);
     const validLimit = Math.max(1, limit);
-    
+
     const totalRecords = await query.getCount();
-    
+
     query.skip((validPage - 1) * validLimit)
-         .take(validLimit)
-         .orderBy('ticket.created_at', 'DESC');
+      .take(validLimit)
+      .orderBy('ticket.created_at', 'DESC');
 
     const data = await query.getMany();
 
