@@ -102,7 +102,7 @@ export class TicketsService {
 
     query.skip((validPage - 1) * validLimit)
       .take(validLimit)
-      .orderBy('ticket.created_at', 'DESC');
+      .orderBy('ticket.updated_at', 'ASC');
 
     const data = await query.getMany();
 
@@ -123,6 +123,11 @@ export class TicketsService {
     const ticket = await this.ticketRepository.findOne({
       where: { id },
       relations: ['created_by', 'assigned_regionalOffice', 'comments', 'comments.user', 'attachments'],
+      order: {
+        comments: {
+          created_at: 'ASC',
+        },
+      },
     });
     if (!ticket) throw new NotFoundException('Ticket not found');
     return ticket;
@@ -219,7 +224,7 @@ export class TicketsService {
 
     query.skip((validPage - 1) * validLimit)
       .take(validLimit)
-      .orderBy('ticket.created_at', 'DESC');
+      .orderBy('ticket.updated_at', 'ASC');
 
     const data = await query.getMany();
 
