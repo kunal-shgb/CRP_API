@@ -34,10 +34,10 @@ export class Ticket {
   @Column({ type: 'text' })
   description: string;
 
-  @Column({ type: 'enum', enum: TicketStatus, default: TicketStatus.OPEN })
+  @Column({ type: 'enum', enum: TicketStatus, default: TicketStatus.PENDING_AT_RO })
   status: TicketStatus;
 
-  @Column({ type: 'enum', enum: TicketLevel, default: TicketLevel.BRANCH })
+  @Column({ type: 'enum', enum: TicketLevel, default: TicketLevel.REGIONAL_OFFICE })
   current_level: TicketLevel;
 
   @Column({ type: 'text', nullable: true })

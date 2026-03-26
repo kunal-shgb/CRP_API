@@ -1,5 +1,4 @@
 export enum TicketLevel {
-  BRANCH = 'BRANCH',
   REGIONAL_OFFICE = 'REGIONAL_OFFICE',
   HEAD_OFFICE = 'HEAD_OFFICE',
 }

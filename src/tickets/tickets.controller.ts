@@ -19,7 +19,6 @@ export class TicketsController {
   @Post()
   @Roles(UserRole.BRANCH)
   async create(@Body() createTicketDto: CreateTicketDto, @CurrentUser() user: any) {
-    console.log(createTicketDto,user);
     return this.ticketsService.create(createTicketDto, user);
   }
 

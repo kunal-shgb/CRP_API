@@ -27,7 +27,7 @@ export class TicketsService {
     // 1. Uniqueness Validation
     if (createTicketDto.ticket_type !== TicketType.OTHERS && createTicketDto.utr_rrn) {
       const existing = await this.ticketRepository.findOne({
-        where: { utr_rrn: createTicketDto.utr_rrn, status: TicketStatus.OPEN },
+        where: { utr_rrn: createTicketDto.utr_rrn, status: TicketStatus.PENDING_AT_RO },
       });
       if (existing) {
         throw new ConflictException(`An open ticket already exists for UTR/RRN: ${createTicketDto.utr_rrn}`);
@@ -39,8 +39,8 @@ export class TicketsService {
       ...createTicketDto,
       created_by: creator,
       assigned_regionalOffice: creator.branch.regionalOffice,
-      status: TicketStatus.OPEN,
-      current_level: TicketLevel.BRANCH,
+      status: TicketStatus.PENDING_AT_RO,
+      current_level: TicketLevel.REGIONAL_OFFICE,
     });
 
     return this.ticketRepository.save(ticket);
@@ -66,7 +66,7 @@ export class TicketsService {
     const aggQuery = query.clone();
     aggQuery.select('ticket.product_type', 'productType')
       .addSelect('COUNT(DISTINCT ticket.id)', 'totalCount')
-      .addSelect(`SUM(CASE WHEN ticket.status = '${TicketStatus.OPEN}' THEN 1 ELSE 0 END)`, 'openCount')
+      .addSelect(`SUM(CASE WHEN ticket.status = '${TicketStatus.PENDING_AT_RO}' THEN 1 ELSE 0 END)`, 'openCount')
       .addSelect(`SUM(CASE WHEN ticket.status = '${TicketStatus.CLOSED}' THEN 1 ELSE 0 END)`, 'closedCount')
       .groupBy('ticket.product_type');
 
@@ -80,14 +80,14 @@ export class TicketsService {
 
     const summaryQuery = query.clone();
     summaryQuery
-      .select(`SUM(CASE WHEN ticket.status = '${TicketStatus.OPEN}' THEN 1 ELSE 0 END)`, 'totalOpen')
+      .select(`SUM(CASE WHEN ticket.status = '${TicketStatus.PENDING_AT_RO}' THEN 1 ELSE 0 END)`, 'totalOpen')
       .addSelect(`SUM(CASE WHEN ticket.status = '${TicketStatus.CLOSED}' THEN 1 ELSE 0 END)`, 'totalClosed')
-      .addSelect(`SUM(CASE WHEN ticket.status = '${TicketStatus.OPEN}' AND ticket.current_level = '${TicketLevel.REGIONAL_OFFICE}' THEN 1 ELSE 0 END)`, 'totalPendingAtRO')
-      .addSelect(`SUM(CASE WHEN ticket.status = '${TicketStatus.ESCALATED_HEAD_OFFICE}' THEN 1 ELSE 0 END)`, 'totalEscalatedAtHO');
+      .addSelect(`SUM(CASE WHEN ticket.status = '${TicketStatus.PENDING_AT_RO}' AND ticket.current_level = '${TicketLevel.REGIONAL_OFFICE}' THEN 1 ELSE 0 END)`, 'totalPendingAtRO')
+      .addSelect(`SUM(CASE WHEN ticket.status = '${TicketStatus.ESCALATED_TO_HEAD_OFFICE}' THEN 1 ELSE 0 END)`, 'totalEscalatedAtHO');
 
     const rawSummary = await summaryQuery.getRawOne();
     const statusSummary = {
-      totalOpen: Number(rawSummary?.totalOpen) || 0,
+      totalOpen: Number(rawSummary?.totalPendingAtRO) + Number(rawSummary?.totalEscalatedAtHO) || 0,
       totalClosed: Number(rawSummary?.totalClosed) || 0,
       totalPendingAtRO: Number(rawSummary?.totalPendingAtRO) || 0,
       totalEscalatedAtHO: Number(rawSummary?.totalEscalatedAtHO) || 0,
@@ -148,7 +148,7 @@ export class TicketsService {
   async escalateToHeadOffice(id: number, notes: string) {
     const ticket = await this.findOne(id);
     ticket.current_level = TicketLevel.HEAD_OFFICE;
-    ticket.status = TicketStatus.ESCALATED_HEAD_OFFICE;
+    ticket.status = TicketStatus.ESCALATED_TO_HEAD_OFFICE;
     ticket.resolution_notes = notes; // Escalation notes
     return this.ticketRepository.save(ticket);
   }
@@ -185,7 +185,7 @@ export class TicketsService {
     const aggQuery = query.clone();
     aggQuery.select('ticket.product_type', 'productType')
       .addSelect('COUNT(DISTINCT ticket.id)', 'totalCount')
-      .addSelect(`SUM(CASE WHEN ticket.status = '${TicketStatus.OPEN}' THEN 1 ELSE 0 END)`, 'openCount')
+      .addSelect(`SUM(CASE WHEN ticket.status = '${TicketStatus.PENDING_AT_RO}' THEN 1 ELSE 0 END)`, 'openCount')
       .addSelect(`SUM(CASE WHEN ticket.status = '${TicketStatus.CLOSED}' THEN 1 ELSE 0 END)`, 'closedCount')
       .groupBy('ticket.product_type');
     const rawAgg = await aggQuery.getRawMany();
@@ -198,10 +198,10 @@ export class TicketsService {
 
     const summaryQuery = query.clone();
     summaryQuery
-      .select(`SUM(CASE WHEN ticket.status = '${TicketStatus.OPEN}' THEN 1 ELSE 0 END)`, 'totalOpen')
+      .select(`SUM(CASE WHEN ticket.status = '${TicketStatus.PENDING_AT_RO}' THEN 1 ELSE 0 END)`, 'totalOpen')
       .addSelect(`SUM(CASE WHEN ticket.status = '${TicketStatus.CLOSED}' THEN 1 ELSE 0 END)`, 'totalClosed')
-      .addSelect(`SUM(CASE WHEN ticket.status = '${TicketStatus.OPEN}' AND ticket.current_level = '${TicketLevel.REGIONAL_OFFICE}' THEN 1 ELSE 0 END)`, 'totalPendingAtRO')
-      .addSelect(`SUM(CASE WHEN ticket.status = '${TicketStatus.ESCALATED_HEAD_OFFICE}' THEN 1 ELSE 0 END)`, 'totalEscalatedAtHO');
+      .addSelect(`SUM(CASE WHEN ticket.status = '${TicketStatus.PENDING_AT_RO}' AND ticket.current_level = '${TicketLevel.REGIONAL_OFFICE}' THEN 1 ELSE 0 END)`, 'totalPendingAtRO')
+      .addSelect(`SUM(CASE WHEN ticket.status = '${TicketStatus.ESCALATED_TO_HEAD_OFFICE}' THEN 1 ELSE 0 END)`, 'totalEscalatedAtHO');
 
     const rawSummary = await summaryQuery.getRawOne();
     const statusSummary = {

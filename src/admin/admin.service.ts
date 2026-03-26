@@ -1,6 +1,6 @@
 import { Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { Repository } from 'typeorm';
+import { In, Repository } from 'typeorm';
 import { Ticket } from '../tickets/entities/ticket.entity';
 import { TicketStatus } from '../common/enums/ticket-status.enum';
 import { TicketLevel } from '../common/enums/ticket-level.enum';
@@ -10,15 +10,12 @@ export class AdminService {
   constructor(
     @InjectRepository(Ticket)
     private ticketRepository: Repository<Ticket>,
-  ) {}
+  ) { }
 
   async getAnalytics() {
-    const totalOpen = await this.ticketRepository.count({ where: { status: TicketStatus.OPEN } });
-    const totalClosed = await this.ticketRepository.count({ where: { status: TicketStatus.CLOSED } });
-
-    const pendingAtBranch = await this.ticketRepository.count({ where: { current_level: TicketLevel.BRANCH, status: TicketStatus.OPEN } });
-    const pendingAtRegionalOffice = await this.ticketRepository.count({ where: { current_level: TicketLevel.REGIONAL_OFFICE, status: TicketStatus.OPEN } });
-    const pendingAtHeadOffice = await this.ticketRepository.count({ where: { current_level: TicketLevel.HEAD_OFFICE, status: TicketStatus.OPEN } });
+    const total = await this.ticketRepository.count();
+    const pendingAtRegionalOffice = await this.ticketRepository.count({ where: { current_level: TicketLevel.REGIONAL_OFFICE, status: TicketStatus.PENDING_AT_RO } });
+    const pendingAtHeadOffice = await this.ticketRepository.count({ where: { current_level: TicketLevel.HEAD_OFFICE, status: TicketStatus.PENDING_AT_RO } });
 
     const productWiseStats = await this.ticketRepository
       .createQueryBuilder('ticket')
@@ -28,10 +25,8 @@ export class AdminService {
       .getRawMany();
 
     return {
-      totalOpen,
-      totalClosed,
+      total,
       pending: {
-        branch: pendingAtBranch,
         regionalOffice: pendingAtRegionalOffice,
         headOffice: pendingAtHeadOffice,
       },
