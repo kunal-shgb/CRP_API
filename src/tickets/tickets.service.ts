@@ -78,6 +78,21 @@ export class TicketsService {
       closedCount: Number(item.closedCount) || 0,
     }));
 
+    const summaryQuery = query.clone();
+    summaryQuery
+      .select(`SUM(CASE WHEN ticket.status = '${TicketStatus.OPEN}' THEN 1 ELSE 0 END)`, 'totalOpen')
+      .addSelect(`SUM(CASE WHEN ticket.status = '${TicketStatus.CLOSED}' THEN 1 ELSE 0 END)`, 'totalClosed')
+      .addSelect(`SUM(CASE WHEN ticket.status = '${TicketStatus.OPEN}' AND ticket.current_level = '${TicketLevel.REGIONAL_OFFICE}' THEN 1 ELSE 0 END)`, 'totalPendingAtRO')
+      .addSelect(`SUM(CASE WHEN ticket.status = '${TicketStatus.ESCALATED_HEAD_OFFICE}' THEN 1 ELSE 0 END)`, 'totalEscalatedAtHO');
+
+    const rawSummary = await summaryQuery.getRawOne();
+    const statusSummary = {
+      totalOpen: Number(rawSummary?.totalOpen) || 0,
+      totalClosed: Number(rawSummary?.totalClosed) || 0,
+      totalPendingAtRO: Number(rawSummary?.totalPendingAtRO) || 0,
+      totalEscalatedAtHO: Number(rawSummary?.totalEscalatedAtHO) || 0,
+    };
+
     query.leftJoinAndSelect('ticket.created_by', 'createdBy');
     query.leftJoinAndSelect('ticket.assigned_regionalOffice', 'assignedRO');
 
@@ -98,7 +113,8 @@ export class TicketsService {
         page: validPage,
         limit: validLimit,
         totalPages: Math.ceil(totalRecords / validLimit),
-        productMetrics
+        productMetrics,
+        ...statusSummary,
       }
     };
   }
@@ -180,6 +196,20 @@ export class TicketsService {
       closedCount: Number(item.closedCount) || 0,
     }));
 
+    const summaryQuery = query.clone();
+    summaryQuery
+      .select(`SUM(CASE WHEN ticket.status = '${TicketStatus.OPEN}' THEN 1 ELSE 0 END)`, 'totalOpen')
+      .addSelect(`SUM(CASE WHEN ticket.status = '${TicketStatus.CLOSED}' THEN 1 ELSE 0 END)`, 'totalClosed')
+      .addSelect(`SUM(CASE WHEN ticket.status = '${TicketStatus.OPEN}' AND ticket.current_level = '${TicketLevel.REGIONAL_OFFICE}' THEN 1 ELSE 0 END)`, 'totalPendingAtRO')
+      .addSelect(`SUM(CASE WHEN ticket.status = '${TicketStatus.ESCALATED_HEAD_OFFICE}' THEN 1 ELSE 0 END)`, 'totalEscalatedAtHO');
+
+    const rawSummary = await summaryQuery.getRawOne();
+    const statusSummary = {
+      totalOpen: Number(rawSummary?.totalOpen) || 0,
+      totalClosed: Number(rawSummary?.totalClosed) || 0,
+      totalEscalatedAtHO: Number(rawSummary?.totalEscalatedAtHO) || 0,
+    };
+
     const page = parseInt(filters.page, 10) || 1;
     const limit = parseInt(filters.limit, 10) || 10;
     const validPage = Math.max(1, page);
@@ -200,7 +230,8 @@ export class TicketsService {
         page: validPage,
         limit: validLimit,
         totalPages: Math.ceil(totalRecords / validLimit),
-        productMetrics
+        productMetrics,
+        ...statusSummary,
       }
     };
   }
