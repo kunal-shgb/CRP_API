@@ -122,7 +122,7 @@ export class TicketsService {
   async findOne(id: number) {
     const ticket = await this.ticketRepository.findOne({
       where: { id },
-      relations: ['created_by', 'assigned_regionalOffice', 'comments', 'comments.user', 'attachments'],
+      relations: ['created_by', 'assigned_regionalOffice', 'comments', 'comments.user', 'comments.attachments', 'attachments'],
       order: {
         comments: {
           created_at: 'ASC',
@@ -241,13 +241,14 @@ export class TicketsService {
     };
   }
 
-  async uploadAttachment(ticketId: number, file: Express.Multer.File, user: User) {
+  async uploadAttachment(ticketId: number, file: Express.Multer.File, user: User, commentId?: number) {
     const ticket = await this.findOne(ticketId);
     const attachment = this.attachmentRepository.create({
       ticket,
       file_url: file.path,
       file_name: file.originalname,
       uploaded_by: user,
+      comment: commentId ? { id: commentId } as any : null,
     });
     return this.attachmentRepository.save(attachment);
   }

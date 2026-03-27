@@ -1,6 +1,7 @@
-import { Entity, PrimaryGeneratedColumn, Column, ManyToOne, JoinColumn, CreateDateColumn } from 'typeorm';
+import { Entity, PrimaryGeneratedColumn, Column, ManyToOne, JoinColumn, CreateDateColumn, OneToMany } from 'typeorm';
 import { Ticket } from './ticket.entity';
 import { User } from '../../users/entities/user.entity';
+import { TicketAttachment } from './ticket-attachment.entity';
 
 @Entity('ticket_comments')
 export class TicketComment {
@@ -14,6 +15,9 @@ export class TicketComment {
   @ManyToOne(() => User)
   @JoinColumn({ name: 'user_id' })
   user: User;
+
+  @OneToMany(() => TicketAttachment, (attachment) => attachment.comment)
+  attachments: TicketAttachment[];
 
   @Column({ type: 'text' })
   comment: string;

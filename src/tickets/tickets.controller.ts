@@ -1,4 +1,4 @@
-import { Controller, Get, Post, Body, Param, UseGuards, UploadedFile, Query, UseInterceptors } from '@nestjs/common';
+import { Controller, Get, Post, Body, Param, UseGuards, UploadedFile, Query, UseInterceptors, Res } from '@nestjs/common';
 import { TicketsService } from './tickets.service';
 import { CreateTicketDto } from './dto/create-ticket.dto';
 import { CreateCommentDto } from './dto/create-comment.dto';
@@ -9,7 +9,8 @@ import { CurrentUser } from '../auth/decorators/current-user.decorator';
 import { UserRole } from '../common/enums/user-role.enum';
 import { FileInterceptor } from '@nestjs/platform-express';
 import { diskStorage } from 'multer';
-import { extname } from 'path';
+import { extname, join } from 'path';
+import type { Response } from 'express';
 
 @Controller('tickets')
 @UseGuards(JwtAuthGuard, RolesGuard)
@@ -65,7 +66,17 @@ export class TicketsController {
       },
     }),
   }))
-  async uploadFile(@Param('id') id: string, @UploadedFile() file: Express.Multer.File, @CurrentUser() user: any) {
-    return this.ticketsService.uploadAttachment(+id, file, user);
+  async uploadFile(
+    @Param('id') id: string,
+    @UploadedFile() file: Express.Multer.File,
+    @CurrentUser() user: any,
+    @Body('commentId') commentId?: string,
+  ) {
+    return this.ticketsService.uploadAttachment(+id, file, user, commentId ? +commentId : undefined);
+  }
+
+  @Get('download/:filename')
+  async downloadFile(@Param('filename') filename: string, @Res() res: Response) {
+    return res.sendFile(filename, { root: './uploads' });
   }
 }
