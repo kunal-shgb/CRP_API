@@ -18,7 +18,7 @@ export class TicketsController {
   constructor(private readonly ticketsService: TicketsService) {}
 
   @Post()
-  @Roles(UserRole.BRANCH)
+  @Roles(UserRole.BRANCH, UserRole.REGIONAL_OFFICE)
   async create(@Body() createTicketDto: CreateTicketDto, @CurrentUser() user: any) {
     return this.ticketsService.create(createTicketDto, user);
   }

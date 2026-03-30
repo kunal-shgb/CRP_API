@@ -23,7 +23,7 @@ export class TicketsService {
     private attachmentRepository: Repository<TicketAttachment>,
   ) { }
 
-  async create(createTicketDto: CreateTicketDto, creator: User): Promise<Ticket> {
+  async create(createTicketDto: CreateTicketDto, creator: User): Promise<Ticket | null> {
     // 1. Uniqueness Validation
     if (createTicketDto.ticket_type !== TicketType.OTHERS && createTicketDto.utr_rrn) {
       const existing = await this.ticketRepository.findOne({
@@ -34,16 +34,26 @@ export class TicketsService {
       }
     }
 
+    const isBranch = creator.role === UserRole.BRANCH;
 
     const ticket = this.ticketRepository.create({
       ...createTicketDto,
       created_by: creator,
-      assigned_regionalOffice: creator.branch.regionalOffice,
-      status: TicketStatus.PENDING_AT_RO,
-      current_level: TicketLevel.REGIONAL_OFFICE,
+      // Branch → assign to their linked RO; RO → null (implicitly routed to HO)
+      assigned_regionalOffice: isBranch ? creator.branch?.regionalOffice ?? null : null,
+      status: isBranch ? TicketStatus.PENDING_AT_RO : TicketStatus.ESCALATED_TO_HEAD_OFFICE,
+      current_level: isBranch ? TicketLevel.REGIONAL_OFFICE : TicketLevel.HEAD_OFFICE,
     });
 
-    return this.ticketRepository.save(ticket);
+    const saved = await this.ticketRepository.save(ticket);
+
+    // Reload with role-appropriate relations for a complete response
+    return this.ticketRepository.findOne({
+      where: { id: saved.id },
+      relations: isBranch
+        ? ['created_by', 'created_by.branch', 'created_by.branch.regionalOffice', 'assigned_regionalOffice']
+        : ['created_by', 'created_by.regionalOffice'],
+    });
   }
 
   async findAllByRole(user: any, page: number = 1, limit: number = 10) {
@@ -55,7 +65,12 @@ export class TicketsService {
       query.andWhere('ticket.product_type = :productType', { productType: user.productType });
     } else if (user.role === UserRole.REGIONAL_OFFICE && user.regionalOffice?.id) {
       query.leftJoin('ticket.assigned_regionalOffice', 'regionalOffice');
-      query.andWhere('regionalOffice.id = :roId', { roId: user.regionalOffice.id });
+      query.leftJoin('ticket.created_by', 'roTicketCreator');
+      // Show tickets assigned to this RO AND tickets this RO created directly (assigned = null)
+      query.andWhere(
+        '(regionalOffice.id = :roId OR (roTicketCreator.regionalOffice_id = :roId AND ticket.assigned_regionalOffice IS NULL))',
+        { roId: user.regionalOffice.id },
+      );
     } else if (user.role === UserRole.BRANCH && user.branch?.id) {
       query.leftJoin('ticket.created_by', 'creator');
       query.leftJoin('creator.branch', 'branch');

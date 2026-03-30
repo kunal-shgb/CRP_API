@@ -47,9 +47,9 @@ export class Ticket {
   @JoinColumn({ name: 'created_by_id' })
   created_by: User;
 
-  @ManyToOne(() => RegionalOffice, (regionalOffice) => regionalOffice.tickets, { nullable: false })
+  @ManyToOne(() => RegionalOffice, (regionalOffice) => regionalOffice.tickets, { nullable: true })
   @JoinColumn({ name: 'assigned_regionalOffice_id' })
-  assigned_regionalOffice: RegionalOffice;
+  assigned_regionalOffice: RegionalOffice | null;
 
   @OneToMany(() => TicketComment, (comment) => comment.ticket)
   comments: TicketComment[];
