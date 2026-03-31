@@ -8,12 +8,17 @@ import * as bcrypt from 'bcryptjs';
 import { BranchesService } from '../branches/branches.service';
 import { RegionalOfficesService } from '../regional-offices/regional-offices.service';
 import { UserRole } from '../common/enums/user-role.enum';
+import { TicketAttachment } from '../tickets/entities/ticket-attachment.entity';
+import * as fs from 'fs';
+import * as path from 'path';
 
 @Injectable()
 export class UsersService {
   constructor(
     @InjectRepository(User)
     private usersRepository: Repository<User>,
+    @InjectRepository(TicketAttachment)
+    private attachmentRepo: Repository<TicketAttachment>,
     private branchesService: BranchesService,
     private regionalOfficeService: RegionalOfficesService,
   ) { }
@@ -192,6 +197,29 @@ export class UsersService {
   }
 
   async remove(id: number): Promise<void> {
+    // 1. Find all attachments that will be affected by this user's deletion
+    const attachments = await this.attachmentRepo.find({
+      where: [
+        { uploaded_by: { id } },
+        { ticket: { created_by: { id } } },
+        { comment: { user: { id } } }
+      ]
+    });
+
+    // 2. Delete physical files associated with these attachments
+    for (const attachment of attachments) {
+      if (attachment.file_url) {
+        try {
+          if (fs.existsSync(attachment.file_url)) {
+            await fs.promises.unlink(attachment.file_url);
+          }
+        } catch (err) {
+          console.error(`Failed to delete file ${attachment.file_url}:`, err);
+        }
+      }
+    }
+
+    // 3. Delete the user (database cascade handles related tickets, comments, and attachment records)
     const result = await this.usersRepository.delete(id);
     if (result.affected === 0) {
       throw new NotFoundException(`User with ID ${id} not found`);

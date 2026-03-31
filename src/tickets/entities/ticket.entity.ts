@@ -43,7 +43,7 @@ export class Ticket {
   @Column({ type: 'text', nullable: true })
   resolution_notes: string;
 
-  @ManyToOne(() => User, { nullable: false })
+  @ManyToOne(() => User, { nullable: false, onDelete: 'CASCADE' })
   @JoinColumn({ name: 'created_by_id' })
   created_by: User;
 

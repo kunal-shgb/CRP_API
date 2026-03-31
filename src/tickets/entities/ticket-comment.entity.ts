@@ -12,7 +12,7 @@ export class TicketComment {
   @JoinColumn({ name: 'ticket_id' })
   ticket: Ticket;
 
-  @ManyToOne(() => User)
+  @ManyToOne(() => User, { onDelete: 'CASCADE' })
   @JoinColumn({ name: 'user_id' })
   user: User;
 

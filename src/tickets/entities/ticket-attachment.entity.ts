@@ -22,7 +22,7 @@ export class TicketAttachment {
   @Column()
   file_name: string;
 
-  @ManyToOne(() => User)
+  @ManyToOne(() => User, { onDelete: 'CASCADE' })
   @JoinColumn({ name: 'uploaded_by_id' })
   uploaded_by: User;
 
