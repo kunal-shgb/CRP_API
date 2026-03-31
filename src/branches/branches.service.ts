@@ -33,50 +33,61 @@ export class BranchesService {
     return this.branchRepository.save(branch);
   }
 
-  async findAll(page: number = 1, limit: number = 10, regionalOfficeId?: number): Promise<any> {
+  async findAll(page: number = 1, limit: number = 10, search?: string, regionalOfficeId?: number): Promise<any> {
     const validPage = Math.max(1, page);
     const validLimit = Math.max(1, limit);
     
-    const where: any = {};
+    const query = this.branchRepository.createQueryBuilder('branch')
+      .leftJoinAndSelect('branch.regionalOffice', 'regionalOffice');
+
     if (regionalOfficeId) {
-      where.regionalOffice = { id: regionalOfficeId };
+      query.andWhere('regionalOffice.id = :roId', { roId: regionalOfficeId });
     }
 
-    const [data, totalRecords] = await this.branchRepository.findAndCount({
-      where,
-      relations: ['regionalOffice'],
-      skip: (validPage - 1) * validLimit,
-      take: validLimit,
-      order: { id: 'DESC' }
-    });
+    if (search) {
+      query.andWhere('(LOWER(branch.name) LIKE :search OR LOWER(branch.code) LIKE :search)', { search: `%${search.toLowerCase()}%` });
+    }
+
+    const [data, totalRecords] = await query
+      .skip((validPage - 1) * validLimit)
+      .take(validLimit)
+      .orderBy('branch.id', 'DESC')
+      .getManyAndCount();
+
     return { data, meta: { totalRecords, page: validPage, limit: validLimit, totalPages: Math.ceil(totalRecords / validLimit) } };
   }
 
-  async findAllByRole(user: any, page: number = 1, limit: number = 10, regionalOfficeId?: number): Promise<any> {
+  async findAllByRole(user: any, page: number = 1, limit: number = 10, search?: string, regionalOfficeId?: number): Promise<any> {
     if (user.role === UserRole.ADMIN) {
-      return this.findAll(page, limit, regionalOfficeId);
+      return this.findAll(page, limit, search, regionalOfficeId);
     }
     const validPage = Math.max(1, page);
     const validLimit = Math.max(1, limit);
     
+    const query = this.branchRepository.createQueryBuilder('branch')
+      .leftJoinAndSelect('branch.regionalOffice', 'regionalOffice');
+
     // REGIONAL_OFFICE user — return branches under their RO
     if (user.role === UserRole.REGIONAL_OFFICE && user.regionalOffice?.id) {
-      const [data, totalRecords] = await this.branchRepository.findAndCount({
-        where: { regionalOffice: { id: user.regionalOffice.id } },
-        relations: ['regionalOffice'],
-        skip: (validPage - 1) * validLimit,
-        take: validLimit,
-        order: { id: 'DESC' }
-      });
-      return { data, meta: { totalRecords, page: validPage, limit: validLimit, totalPages: Math.ceil(totalRecords / validLimit) } };
+      query.andWhere('regionalOffice.id = :roId', { roId: user.regionalOffice.id });
+    } else if (user.role === UserRole.BRANCH && user.branch?.id) {
+      // BRANCH user — return only their own branch
+      query.andWhere('branch.id = :branchId', { branchId: user.branch.id });
+    } else {
+      return { data: [], meta: { totalRecords: 0, page: validPage, limit: validLimit, totalPages: 0 } };
     }
-    // BRANCH user — return only their own branch
-    if (user.role === UserRole.BRANCH && user.branch?.id) {
-      const branch = await this.findOne(user.branch.id);
-      const data = branch ? [branch] : [];
-      return { data, meta: { totalRecords: data.length, page: 1, limit: validLimit, totalPages: 1 } };
+
+    if (search) {
+      query.andWhere('(LOWER(branch.name) LIKE :search OR LOWER(branch.code) LIKE :search)', { search: `%${search.toLowerCase()}%` });
     }
-    return { data: [], meta: { totalRecords: 0, page: validPage, limit: validLimit, totalPages: 0 } };
+
+    const [data, totalRecords] = await query
+      .skip((validPage - 1) * validLimit)
+      .take(validLimit)
+      .orderBy('branch.id', 'DESC')
+      .getManyAndCount();
+
+    return { data, meta: { totalRecords, page: validPage, limit: validLimit, totalPages: Math.ceil(totalRecords / validLimit) } };
   }
 
   async findOne(id: number): Promise<Branch | null> {

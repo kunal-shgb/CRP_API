@@ -25,12 +25,14 @@ export class BranchesController {
     @CurrentUser() user: any,
     @Query('page') page: string,
     @Query('limit') limit: string,
+    @Query('search') search?: string,
     @Query('regionalOfficeId') regionalOfficeId?: string,
   ) {
     return this.branchesService.findAllByRole(
       user,
       parseInt(page) || 1,
       parseInt(limit) || 10,
+      search,
       regionalOfficeId ? parseInt(regionalOfficeId) : undefined,
     );
   }

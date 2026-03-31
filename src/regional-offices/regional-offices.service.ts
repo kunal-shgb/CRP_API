@@ -22,29 +22,54 @@ export class RegionalOfficesService {
     return this.regionalOfficeRepository.save(regionalOffice);
   }
 
-  async findAll(page: number = 1, limit: number = 10): Promise<any> {
+  async findAll(page: number = 1, limit: number = 10, search?: string): Promise<any> {
     const validPage = Math.max(1, page);
     const validLimit = Math.max(1, limit);
-    const [data, totalRecords] = await this.regionalOfficeRepository.findAndCount({
-      relations: ['branches'],
-      skip: (validPage - 1) * validLimit,
-      take: validLimit,
-      order: { id: 'DESC' }
-    });
+    
+    const query = this.regionalOfficeRepository.createQueryBuilder('ro')
+      .leftJoinAndSelect('ro.branches', 'branches');
+
+    if (search) {
+      query.andWhere('(LOWER(ro.name) LIKE :search OR LOWER(ro.code) LIKE :search)', { search: `%${search.toLowerCase()}%` });
+    }
+
+    const [data, totalRecords] = await query
+      .skip((validPage - 1) * validLimit)
+      .take(validLimit)
+      .orderBy('ro.id', 'DESC')
+      .getManyAndCount();
+
     return { data, meta: { totalRecords, page: validPage, limit: validLimit, totalPages: Math.ceil(totalRecords / validLimit) } };
   }
 
-  async findAllByRole(user: any, page: number = 1, limit: number = 10): Promise<any> {
+  async findAllByRole(user: any, page: number = 1, limit: number = 10, search?: string): Promise<any> {
     if (user.role === UserRole.ADMIN || user.role === UserRole.HEAD_OFFICE) {
-      return this.findAll(page, limit);
+      return this.findAll(page, limit, search);
     }
+    const validPage = Math.max(1, page);
+    const validLimit = Math.max(1, limit);
+
+    const query = this.regionalOfficeRepository.createQueryBuilder('ro')
+      .leftJoinAndSelect('ro.branches', 'branches');
+
     // REGIONAL_OFFICE user — return only their own RO
     if (user.regionalOffice?.id) {
-      const ro = await this.findOne(user.regionalOffice.id);
-      const data = ro ? [ro] : [];
-      return { data, meta: { totalRecords: data.length, page: 1, limit: Math.max(1, limit), totalPages: 1 } };
+      query.andWhere('ro.id = :roId', { roId: user.regionalOffice.id });
+    } else {
+      return { data: [], meta: { totalRecords: 0, page: validPage, limit: validLimit, totalPages: 0 } };
     }
-    return { data: [], meta: { totalRecords: 0, page: Math.max(1, page), limit: Math.max(1, limit), totalPages: 0 } };
+
+    if (search) {
+      query.andWhere('(LOWER(ro.name) LIKE :search OR LOWER(ro.code) LIKE :search)', { search: `%${search.toLowerCase()}%` });
+    }
+
+    const [data, totalRecords] = await query
+      .skip((validPage - 1) * validLimit)
+      .take(validLimit)
+      .orderBy('ro.id', 'DESC')
+      .getManyAndCount();
+
+    return { data, meta: { totalRecords, page: validPage, limit: validLimit, totalPages: Math.ceil(totalRecords / validLimit) } };
   }
 
   async findOne(id: number): Promise<RegionalOffice | null> {
