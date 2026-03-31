@@ -33,10 +33,17 @@ export class BranchesService {
     return this.branchRepository.save(branch);
   }
 
-  async findAll(page: number = 1, limit: number = 10): Promise<any> {
+  async findAll(page: number = 1, limit: number = 10, regionalOfficeId?: number): Promise<any> {
     const validPage = Math.max(1, page);
     const validLimit = Math.max(1, limit);
+    
+    const where: any = {};
+    if (regionalOfficeId) {
+      where.regionalOffice = { id: regionalOfficeId };
+    }
+
     const [data, totalRecords] = await this.branchRepository.findAndCount({
+      where,
       relations: ['regionalOffice'],
       skip: (validPage - 1) * validLimit,
       take: validLimit,
@@ -45,9 +52,9 @@ export class BranchesService {
     return { data, meta: { totalRecords, page: validPage, limit: validLimit, totalPages: Math.ceil(totalRecords / validLimit) } };
   }
 
-  async findAllByRole(user: any, page: number = 1, limit: number = 10): Promise<any> {
+  async findAllByRole(user: any, page: number = 1, limit: number = 10, regionalOfficeId?: number): Promise<any> {
     if (user.role === UserRole.ADMIN) {
-      return this.findAll(page, limit);
+      return this.findAll(page, limit, regionalOfficeId);
     }
     const validPage = Math.max(1, page);
     const validLimit = Math.max(1, limit);

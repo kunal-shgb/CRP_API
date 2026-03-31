@@ -56,27 +56,45 @@ export class TicketsService {
     });
   }
 
-  async findAllByRole(user: any, page: number = 1, limit: number = 10) {
+  async findAllByRole(user: any, page: number = 1, limit: number = 10, filters: any = {}) {
     const query = this.ticketRepository.createQueryBuilder('ticket');
+    query.leftJoinAndSelect('ticket.created_by', 'createdBy');
+    query.leftJoinAndSelect('ticket.assigned_regionalOffice', 'assignedRO');
+    query.leftJoin('createdBy.branch', 'creatorBranch');
+
     if (user.role === UserRole.ADMIN) {
-      // Admin sees all tickets
+      // Admin sees all
     } else if (user.role === UserRole.HEAD_OFFICE) {
       query.andWhere('ticket.current_level = :level', { level: TicketLevel.HEAD_OFFICE });
       query.andWhere('ticket.product_type = :productType', { productType: user.productType });
     } else if (user.role === UserRole.REGIONAL_OFFICE && user.regionalOffice?.id) {
-      query.leftJoin('ticket.assigned_regionalOffice', 'regionalOffice');
-      query.leftJoin('ticket.created_by', 'roTicketCreator');
-      // Show tickets assigned to this RO AND tickets this RO created directly (assigned = null)
+      // Tickets assigned to this RO OR tickets created by users of this RO
       query.andWhere(
-        '(regionalOffice.id = :roId OR (roTicketCreator.regionalOffice_id = :roId AND ticket.assigned_regionalOffice IS NULL))',
+        '(assignedRO.id = :roId OR (createdBy.regionalOffice_id = :roId AND ticket.assigned_regionalOffice IS NULL))',
         { roId: user.regionalOffice.id },
       );
     } else if (user.role === UserRole.BRANCH && user.branch?.id) {
-      query.leftJoin('ticket.created_by', 'creator');
-      query.leftJoin('creator.branch', 'branch');
-      query.andWhere('branch.id = :branchId', { branchId: user.branch.id });
+      query.andWhere('creatorBranch.id = :branchId', { branchId: user.branch.id });
     } else {
       return { data: [], meta: { totalRecords: 0, page, limit, totalPages: 0, productMetrics: [] } };
+    }
+
+    // Apply Filters
+    if (filters.search) {
+      const search = `%${filters.search.toLowerCase()}%`;
+      query.andWhere(
+        '(LOWER(CAST(ticket.id AS TEXT)) LIKE :search OR LOWER(ticket.utr_rrn) LIKE :search OR LOWER(ticket.account_number) LIKE :search)',
+        { search },
+      );
+    }
+    if (filters.status && filters.status !== 'all') {
+      query.andWhere('ticket.status = :status', { status: filters.status });
+    }
+    if (filters.productType && filters.productType !== 'all') {
+      query.andWhere('ticket.product_type = :productTypeFilter', { productTypeFilter: filters.productType });
+    }
+    if (filters.regionalOfficeId && filters.regionalOfficeId !== 'all') {
+      query.andWhere('assignedRO.id = :roIdFilter', { roIdFilter: filters.regionalOfficeId });
     }
     const aggQuery = query.clone();
     aggQuery.select('ticket.product_type', 'productType')
@@ -108,8 +126,7 @@ export class TicketsService {
       totalEscalatedAtHO: Number(rawSummary?.totalEscalatedAtHO) || 0,
     };
 
-    query.leftJoinAndSelect('ticket.created_by', 'createdBy');
-    query.leftJoinAndSelect('ticket.assigned_regionalOffice', 'assignedRO');
+    // Data fetching (no need to rejoin relations here as already joined)
 
     const validLimit = Math.max(1, limit);
     const validPage = Math.max(1, page);

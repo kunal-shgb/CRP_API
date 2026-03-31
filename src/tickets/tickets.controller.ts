@@ -25,8 +25,21 @@ export class TicketsController {
 
   @Get()
   @Roles(UserRole.ADMIN, UserRole.HEAD_OFFICE, UserRole.REGIONAL_OFFICE, UserRole.BRANCH)
-  async findAll(@CurrentUser() user: any, @Query('page') page: string, @Query('limit') limit: string) {
-    return this.ticketsService.findAllByRole(user, parseInt(page) || 1, parseInt(limit) || 10);
+  async findAll(
+    @CurrentUser() user: any,
+    @Query('page') page: string,
+    @Query('limit') limit: string,
+    @Query('search') search?: string,
+    @Query('status') status?: string,
+    @Query('productType') productType?: string,
+    @Query('regionalOfficeId') regionalOfficeId?: string,
+  ) {
+    return this.ticketsService.findAllByRole(
+      user,
+      parseInt(page) || 1,
+      parseInt(limit) || 10,
+      { search, status, productType, regionalOfficeId }
+    );
   }
 
   @Get('search')

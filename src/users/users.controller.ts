@@ -21,8 +21,13 @@ export class UsersController {
 
   @Get()
   @Roles(UserRole.ADMIN, UserRole.REGIONAL_OFFICE)
-  findAll(@CurrentUser() user: any, @Query('page') page: string, @Query('limit') limit: string) {
-    return this.usersService.findAllByRole(user, parseInt(page) || 1, parseInt(limit) || 10);
+  findAll(
+    @CurrentUser() user: any,
+    @Query('page') page: string,
+    @Query('limit') limit: string,
+    @Query('search') search?: string,
+  ) {
+    return this.usersService.findAllByRole(user, parseInt(page) || 1, parseInt(limit) || 10, search);
   }
 
   @Get(':id')

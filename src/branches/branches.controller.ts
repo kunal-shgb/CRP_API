@@ -21,8 +21,18 @@ export class BranchesController {
 
   @Get()
   @Roles(UserRole.ADMIN, UserRole.REGIONAL_OFFICE, UserRole.BRANCH)
-  findAll(@CurrentUser() user: any, @Query('page') page: string, @Query('limit') limit: string) {
-    return this.branchesService.findAllByRole(user, parseInt(page) || 1, parseInt(limit) || 10);
+  findAll(
+    @CurrentUser() user: any,
+    @Query('page') page: string,
+    @Query('limit') limit: string,
+    @Query('regionalOfficeId') regionalOfficeId?: string,
+  ) {
+    return this.branchesService.findAllByRole(
+      user,
+      parseInt(page) || 1,
+      parseInt(limit) || 10,
+      regionalOfficeId ? parseInt(regionalOfficeId) : undefined,
+    );
   }
 
   @Get(':id')
