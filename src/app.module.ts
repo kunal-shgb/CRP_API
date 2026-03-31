@@ -17,7 +17,7 @@ import { AuthModule } from './auth/auth.module';
       port: parseInt(process.env.DB_PORT as string, 10) || 5432,
       username: process.env.DB_USERNAME || 'postgres',
       password: process.env.DB_PASSWORD || 'root',
-      database: process.env.DB_DATABASE || 'crp_db',
+      database: process.env.DB_DATABASE || 'crp_db_new',
       autoLoadEntities: true,
       synchronize: true, // Use only in development
     }),
