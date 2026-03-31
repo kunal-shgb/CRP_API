@@ -33,6 +33,10 @@ export class BranchesService {
     return this.branchRepository.save(branch);
   }
 
+  async findAllEntities(): Promise<Branch[]> {
+    return this.branchRepository.find({ relations: ['regionalOffice'] });
+  }
+
   async findAll(page: number = 1, limit: number = 10, search?: string, regionalOfficeId?: number): Promise<any> {
     const validPage = Math.max(1, page);
     const validLimit = Math.max(1, limit);

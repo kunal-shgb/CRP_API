@@ -19,6 +19,12 @@ export class UsersController {
     return this.usersService.create(createUserDto);
   }
 
+  @Post('bulk-create-branch-users')
+  @Roles(UserRole.ADMIN)
+  bulkCreateBranchUsers() {
+    return this.usersService.bulkCreateBranchUsers();
+  }
+
   @Get()
   @Roles(UserRole.ADMIN, UserRole.REGIONAL_OFFICE)
   findAll(

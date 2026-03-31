@@ -196,6 +196,50 @@ export class UsersService {
     return this.usersRepository.save(user);
   }
 
+  async bulkCreateBranchUsers(): Promise<any> {
+    const branches = await this.branchesService.findAllEntities();
+    const results: any[] = [];
+    const salt = await bcrypt.genSalt();
+    const hashedPassword = await bcrypt.hash('123456', salt);
+
+    for (const branch of branches) {
+      const username = `BO:${branch.code}`;
+      const email = `bo${branch.code.toLowerCase()}shgb@shgb.bank.in`;
+
+      // Check if username already exists
+      const existingUser = await this.findByUsername(username);
+      if (existingUser) {
+        results.push({ branch: branch.code, status: 'skipped', reason: 'Username already exists' });
+        continue;
+      }
+
+      // Check if branch already has a user (based on User entity relation)
+      const existingBranchUser = await this.usersRepository.findOne({
+        where: { branch: { id: branch.id } }
+      });
+      if (existingBranchUser) {
+        results.push({ branch: branch.code, status: 'skipped', reason: 'Branch already has a user' });
+        continue;
+      }
+
+      const newUser = this.usersRepository.create({
+        username,
+        password: hashedPassword,
+        email,
+        role: UserRole.BRANCH,
+        branch: branch,
+      });
+
+      await this.usersRepository.save(newUser);
+      results.push({ branch: branch.code, status: 'created' });
+    }
+
+    const created = results.filter(r => r.status === 'created').length;
+    const skipped = results.filter(r => r.status === 'skipped').length;
+
+    return { created, skipped, details: results };
+  }
+
   async remove(id: number): Promise<void> {
     // 1. Find all attachments that will be affected by this user's deletion
     const attachments = await this.attachmentRepo.find({
