@@ -7,6 +7,7 @@ import { RegionalOfficesModule } from './regional-offices/regional-offices.modul
 import { BranchesModule } from './branches/branches.module';
 import { UsersModule } from './users/users.module';
 import { TicketsModule } from './tickets/tickets.module';
+import { QrCodesModule } from './qr-codes/qr-codes.module';
 import { AuthModule } from './auth/auth.module';
 
 @Module({
@@ -26,6 +27,7 @@ import { AuthModule } from './auth/auth.module';
     BranchesModule,
     UsersModule,
     TicketsModule,
+    QrCodesModule,
     AuthModule,
   ],
   controllers: [AppController],

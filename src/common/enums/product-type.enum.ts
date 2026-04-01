@@ -5,4 +5,5 @@ export enum ProductType {
   ATM = 'ATM',
   NEFT = 'NEFT',
   RTGS = 'RTGS',
+  QR_CODE = 'QR_CODE',
 }

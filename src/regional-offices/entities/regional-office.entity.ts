@@ -2,6 +2,7 @@ import { Entity, PrimaryGeneratedColumn, Column, OneToMany } from 'typeorm';
 import { Branch } from '../../branches/entities/branch.entity';
 import { User } from '../../users/entities/user.entity';
 import { Ticket } from '../../tickets/entities/ticket.entity';
+import { QrCode } from '../../qr-codes/entities/qr-code.entity';
 
 @Entity('regional_offices')
 export class RegionalOffice {
@@ -22,4 +23,7 @@ export class RegionalOffice {
 
   @OneToMany(() => Ticket, (ticket) => ticket.assigned_regionalOffice)
   tickets: Ticket[];
+
+  @OneToMany(() => QrCode, (qrCode) => qrCode.regional_office)
+  qrCodes: QrCode[];
 }
