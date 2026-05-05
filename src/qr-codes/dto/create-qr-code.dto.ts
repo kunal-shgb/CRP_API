@@ -16,18 +16,22 @@ export class CreateQrCodeDto {
 
   @IsString()
   @IsNotEmpty()
+  @Length(14, 14, { message: 'Mobile number must be exactly 14 digits' })
+  @Matches(/^\d{14}$/, { message: 'Account number must contain only digits' })
   account_number: string;
 
   @IsString()
   @IsNotEmpty()
+  @Length(11, 11, { message: 'IFSC must be exactly 11 digits' })
   ifsc_code: string;
 
   @IsString()
   @IsNotEmpty()
+  @Length(4, 4, { message: 'MCC code must be exactly 4 digits' })
   mcc_code: string;
 
   @IsEmail()
-  @IsOptional()
+  @IsNotEmpty()
   email_id?: string;
 
   @IsString()
@@ -39,7 +43,7 @@ export class CreateQrCodeDto {
   address_line1: string;
 
   @IsString()
-  @IsOptional()
+  @IsNotEmpty()
   address_line2?: string;
 
   @IsString()
