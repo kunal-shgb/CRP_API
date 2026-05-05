@@ -45,8 +45,12 @@ export class QrCodesController {
 
   @Get('export/pending')
   @Roles(UserRole.ADMIN, UserRole.HEAD_OFFICE)
-  async exportPending() {
-    return this.qrCodesService.exportPending();
+  async exportPending(@Res() res: Response) {
+    const { filename, content } = await this.qrCodesService.exportPending();
+
+    res.setHeader('Content-Type', 'text/plain');
+    res.setHeader('Content-Disposition', `attachment; filename="${filename}"`);
+    res.send(content);
   }
 
   @Get(':id')

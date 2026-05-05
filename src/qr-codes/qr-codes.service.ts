@@ -10,7 +10,6 @@ import { QrCode } from './entities/qr-code.entity';
 import { CreateQrCodeDto } from './dto/create-qr-code.dto';
 import { QrCodeStatus } from '../common/enums/qr-code-status.enum';
 import { UserRole } from '../common/enums/user-role.enum';
-import { ProductType } from '../common/enums/product-type.enum';
 
 @Injectable()
 export class QrCodesService {
@@ -153,12 +152,61 @@ export class QrCodesService {
 
   // ─── Export Pending (HO) ──────────────────────────────────────────────────────
 
-  async exportPending(): Promise<QrCode[]> {
-    return this.qrCodeRepository.find({
+  async exportPending(): Promise<{ filename: string; content: string }> {
+    const records = await this.qrCodeRepository.find({
       where: { status: QrCodeStatus.PENDING_QR_GENERATION },
       relations: ['branch', 'regional_office'],
       order: { created_at: 'ASC' },
     });
+
+    const header = 'MerchantTerminal|MerchantId|Mechant Name|MerchantMobno|MerchantAccountno|MerchantIFSCcode|MCCcode|SUBCODE|FEATUREDFLAG|Status|Emailid|TransactionType|Address line1|Address line2|Address line3|City|State|Country|Pincode|Solid|CircleId|MerchantType|AgentLinkingFlag|Agent 1 Id|Agent 1 Name|Agent 1 Mobile no|Agent 1 Email|Agent 2 Id|Agent 2 Name|Agent 2 Mobile no|Agent 2 Email|Agent 3 Id|Agent 3 Name|Agent 3 Mobile no|Agent 3 Email|Agent 4 Id|Agent 4 Name|Agent 4 Mobile no|Agent 4 Email|Agent 5 Id|Agent 5 Name|Agent 5 Mobile no|Agent 5 Email|Agent 6 Id|Agent 6 Name|Agent 6 Mobile no|Agent 6 Email|Agent 7 Id|Agent 7 Name|Agent 7 Mobile no|Agent 7 Email|Agent 8 Id|Agent 8 Name|Agent 8 Mobile no|Agent 8 Email|Agent 9 Id|Agent 9 Name|Agent 9 Mobile no|Agent 9 Email|Agent 10 Id|Agent 10 Name|Agent 10 Mobile no|Agent 10 Email|Agent 11 Id|Agent 11 Name|Agent 11 Mobile no|Agent 11 Email|Agent 12 Id|Agent 12 Name|Agent 12 Mobile no|Agent 12 Email|Agent 13 Id|Agent 13 Name|Agent 13 Mobile no|Agent 13 Email|Agent 14 Id|Agent 14 Name|Agent 14 Mobile no|Agent 14 Email|Agent 15 Id|Agent 15 Name|Agent 15 Mobile no|Agent 15 Email';
+
+    const now = new Date();
+    const day = String(now.getDate()).padStart(2, '0');
+    const month = String(now.getMonth() + 1).padStart(2, '0');
+    const year = now.getFullYear();
+    const dateStr = `${day}-${month}-${year}`;
+    const filename = `Merchantonboarding_SHGB_QR_${dateStr}.txt`;
+
+    const rows = records.map(qr => {
+      return [
+        'MERC', // MerchantTerminal
+        `M${qr.account_number}`, // MerchantId
+        qr.merchant_name || '', // Mechant Name
+        qr.mobile_number || '', // MerchantMobno
+        qr.account_number || '', // MerchantAccountno
+        qr.ifsc_code || '', // MerchantIFSCcode
+        qr.mcc_code || '', // MCCcode
+        '', // SUBCODE
+        '', // FEATUREDFLAG
+        '', // Status
+        qr.email_id || '', // Emailid
+        qr.transaction_type || '', // TransactionType
+        qr.address_line1 || '', // Address line1
+        qr.address_line2 || '', // Address line2
+        '', // Address line3
+        qr.city || '', // City
+        qr.state || '', // State
+        'INDIA', // Country
+        qr.pincode || '', // Pincode
+        qr.sol_id || '', // Solid
+        '', // CircleId
+        'Y', // MerchantType
+        'N', // AgentLinkingFlag
+        ...Array(60).fill('') // Agents 1-15
+      ].join('|');
+    });
+
+    const content = [header, ...rows].join('\n') + '\n';
+
+    const dirPath = path.join(process.cwd(), 'qrFiles');
+    if (!fs.existsSync(dirPath)) {
+      fs.mkdirSync(dirPath, { recursive: true });
+    }
+    const filePath = path.join(dirPath, filename);
+    fs.writeFileSync(filePath, content);
+
+    return { filename, content };
   }
 
   // ─── Bulk Upload ZIP (HO) ──────────────────────────────────────────────────────
