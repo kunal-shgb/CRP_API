@@ -45,6 +45,9 @@ export class QrCode {
   @Column()
   state: string;
 
+  @Column({ nullable: true })
+  circle_id: string;
+
   @Column({ length: 6 })
   pincode: string;
 

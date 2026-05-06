@@ -55,6 +55,10 @@ export class CreateQrCodeDto {
   state: string;
 
   @IsString()
+  @IsOptional()
+  circle_id?: string;
+
+  @IsString()
   @IsNotEmpty()
   @Length(6, 6, { message: 'Pincode must be exactly 6 digits' })
   @Matches(/^\d{6}$/, { message: 'Pincode must contain only digits' })

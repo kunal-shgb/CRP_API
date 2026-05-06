@@ -1,0 +1,2 @@
+MerchantTerminal|MerchantId|Mechant Name|MerchantMobno|MerchantAccountno|MerchantIFSCcode|MCCcode|SUBCODE|FEATUREDFLAG|Status|Emailid|TransactionType|Address line1|Address line2|Address line3|City|State|Country|Pincode|Solid|CircleId|MerchantType|AgentLinkingFlag
+MERC|M83970200001484|KUNAL PVT LTD|919785698878|83970200001484|PUNB0HGB001|0744|||A|bo8080shgb@shgb.bank.in|ALL|PLOT 112|SEC 3||ROHTAK|HARYANA|INDIA|333504|8080||Y|N

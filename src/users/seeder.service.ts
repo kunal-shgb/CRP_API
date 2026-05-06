@@ -12,7 +12,7 @@ export class SeederService implements OnApplicationBootstrap {
     @InjectRepository(User)
     private userRepository: Repository<User>,
     private usersService: UsersService,
-  ) {}
+  ) { }
 
   async onApplicationBootstrap() {
     // 1. Seed Admin
