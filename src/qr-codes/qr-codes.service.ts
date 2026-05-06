@@ -21,6 +21,17 @@ export class QrCodesService {
   // ─── Create ──────────────────────────────────────────────────────────────────
 
   async create(dto: CreateQrCodeDto, creator: any): Promise<QrCode | null> {
+
+    // unique accountNumber and mobile number validation
+    const existingQrCode = await this.qrCodeRepository.findOne({
+      where: [
+        { account_number: dto.account_number },
+        { mobile_number: dto.mobile_number },
+      ],
+    });
+    if (existingQrCode) {
+      throw new BadRequestException('Account number or mobile number already exists.');
+    }
     const isBranch = creator.role === UserRole.BRANCH;
     const isRO = creator.role === UserRole.REGIONAL_OFFICE;
 
