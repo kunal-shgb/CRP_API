@@ -1,0 +1,16 @@
+{
+  "template_path": "./python/template.png",
+  "output_dir": "./uploads/qr-processed",
+  "dpi": 300,
+  "page_index": 0,
+  "crop": {
+    "x": 140,
+    "y": 770,
+    "width": 2500,
+    "height": 2500
+  },
+  "paste": {
+    "x": 120,
+    "y": 750
+  }
+}

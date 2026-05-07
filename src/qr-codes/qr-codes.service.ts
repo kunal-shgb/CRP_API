@@ -6,10 +6,22 @@ import { Repository } from 'typeorm';
 import AdmZip from 'adm-zip';
 import * as fs from 'fs';
 import * as path from 'path';
+import * as os from 'os';
+import { execFile } from 'child_process';
+// mupdf is ESM-only (top-level await) — must be loaded via dynamic import()
 import { QrCode } from './entities/qr-code.entity';
 import { CreateQrCodeDto } from './dto/create-qr-code.dto';
 import { QrCodeStatus } from '../common/enums/qr-code-status.enum';
 import { UserRole } from '../common/enums/user-role.enum';
+
+interface ImageConfig {
+  template_path: string;
+  output_dir: string;
+  dpi: number;
+  page_index: number;
+  crop: { x: number; y: number; width: number; height: number };
+  paste: { x: number; y: number };
+}
 
 @Injectable()
 export class QrCodesService {
@@ -221,6 +233,78 @@ export class QrCodesService {
 
   // ─── Bulk Upload ZIP (HO) ──────────────────────────────────────────────────────
 
+  /**
+   * Extracts the mobile number from filenames like:
+   *   71451121_SPM_PUNB000005618638-918950699901_07-05-2026_12_10_04.pdf
+   * Mobile number sits between the last '-' and the next '_' before the date.
+   */
+  private extractMobileFromFilename(filename: string): string | null {
+    const match = filename.match(/-(\d+)_\d{2}-\d{2}-\d{4}/);
+    return match ? match[1] : null;
+  }
+
+  /**
+   * Renders a single PDF page to a PNG Buffer using mupdf (WASM, no system deps).
+   * Uses dynamic import() because mupdf is an ESM-only module with top-level await.
+   */
+  private async pdfPageToPng(pdfBuffer: Buffer, pageIndex: number, dpi: number): Promise<Buffer> {
+    const mupdf = await import('mupdf');
+    const doc = mupdf.Document.openDocument(pdfBuffer, 'application/pdf');
+    const page = doc.loadPage(pageIndex);
+    const scale = dpi / 72;
+    const pixmap = page.toPixmap(
+      mupdf.Matrix.scale(scale, scale),
+      mupdf.ColorSpace.DeviceRGB,
+      false,
+    );
+    return Buffer.from(pixmap.asPNG());
+  }
+
+  /**
+   * Calls image_service.py to crop sourcePng and paste onto templatePng.
+   * Returns the result PNG file path.
+   */
+  private callImageService(
+    sourcePng: string,
+    templatePng: string,
+    crop: { x: number; y: number; width: number; height: number },
+    paste: { x: number; y: number },
+    outputDir: string,
+  ): Promise<{ file_name: string; file_path: string }> {
+    return new Promise((resolve, reject) => {
+      const PYTHON = process.env.PYTHON_BIN ?? 'python3';
+      const script = path.join(process.cwd(), 'python', 'image_service.py');
+      const args = [
+        script,
+        sourcePng,
+        templatePng,
+        String(crop.x),
+        String(crop.y),
+        String(crop.width),
+        String(crop.height),
+        String(paste.x),
+        String(paste.y),
+        outputDir,
+      ];
+
+      execFile(PYTHON, args, { encoding: 'utf8' }, (err, stdout, stderr) => {
+        if (err) {
+          try {
+            const parsed = JSON.parse(stderr.trim());
+            return reject(new Error(parsed.error || stderr.trim()));
+          } catch {
+            return reject(new Error(stderr.trim() || err.message));
+          }
+        }
+        try {
+          resolve(JSON.parse(stdout.trim()));
+        } catch {
+          reject(new Error(`Unexpected output from image_service.py: ${stdout}`));
+        }
+      });
+    });
+  }
+
   async bulkUploadZip(zipFile: Express.Multer.File): Promise<{
     processed: number;
     updated: string[];
@@ -230,76 +314,98 @@ export class QrCodesService {
       throw new BadRequestException('No ZIP file provided');
     }
 
+    // Load image config
+    const configPath = path.join(process.cwd(), 'python', 'image_config.json');
+    if (!fs.existsSync(configPath)) {
+      throw new BadRequestException('Image config not found at python/image_config.json');
+    }
+    const cfg: ImageConfig = JSON.parse(fs.readFileSync(configPath, 'utf8'));
+
+    const templatePath = path.resolve(cfg.template_path);
+    if (!fs.existsSync(templatePath)) {
+      throw new BadRequestException(`Template image not found: ${cfg.template_path}`);
+    }
+
     const zip = new AdmZip(zipFile.path);
     const entries = zip.getEntries();
+    const pdfEntries = entries.filter(e => !e.isDirectory && e.entryName.toLowerCase().endsWith('.pdf'));
 
     const updated: string[] = [];
     const failed: { filename: string; reason: string }[] = [];
 
-    for (const entry of entries) {
-      if (entry.isDirectory) continue;
+    // Temp directory for intermediate PNGs
+    const tempDir = path.join(os.tmpdir(), `qr_upload_${Date.now()}`);
+    fs.mkdirSync(tempDir, { recursive: true });
 
-      const filename = path.basename(entry.entryName);
+    try {
+      for (const entry of pdfEntries) {
+        const filename = path.basename(entry.entryName);
 
-      // Validate filename: {account_number}_{mobile_number}.pdf
-      if (!filename.endsWith('.pdf')) {
-        failed.push({ filename, reason: 'Not a PDF file' });
-        continue;
+        // ── Step 1: Extract mobile number from filename ──────────────────────
+        const mobile_number = this.extractMobileFromFilename(filename);
+        if (!mobile_number) {
+          failed.push({ filename, reason: 'Could not extract mobile number from filename' });
+          continue;
+        }
+
+        try {
+          // ── Step 2: PDF → PNG via mupdf (pure Node.js, no system deps) ─────
+          const pdfBuffer = entry.getData();
+          const pngBuffer = await this.pdfPageToPng(pdfBuffer, cfg.page_index ?? 0, cfg.dpi ?? 200);
+
+          const tempPng = path.join(tempDir, `${mobile_number}_${Date.now()}.png`);
+          fs.writeFileSync(tempPng, pngBuffer);
+
+          // ── Step 3: Crop + paste via Python image_service.py ────────────────
+          const outDir = path.join(process.cwd(), 'uploads', 'qr-processed');
+          const pyResult = await this.callImageService(
+            tempPng,
+            templatePath,
+            cfg.crop,
+            cfg.paste,
+            outDir,
+          );
+
+          // ── Step 4: DB lookup by mobile number ──────────────────────────────
+          const record = await this.qrCodeRepository.findOne({
+            where: { mobile_number },
+            relations: ['regional_office'],
+          });
+
+          if (!record) {
+            failed.push({ filename, reason: `No record found for mobile=${mobile_number}` });
+            continue;
+          }
+
+          // ── Step 5: Copy result to RO-scoped folder ─────────────────────────
+          const roName = record.regional_office?.name
+            ? record.regional_office.name.replace(/[^a-zA-Z0-9_-]/g, '_')
+            : 'UNKNOWN_RO';
+          const destDir = path.join(process.cwd(), 'uploads', 'qr-codes', roName);
+          fs.mkdirSync(destDir, { recursive: true });
+
+          const destFilename = `${mobile_number}_qr.png`;
+          const destPath = path.join(destDir, destFilename);
+          fs.copyFileSync(pyResult.file_path, destPath);
+
+          // ── Step 6: Update DB record ────────────────────────────────────────
+          record.qr_pdf_url = destPath;
+          record.qr_pdf_filename = destFilename;
+          record.status = QrCodeStatus.AVAILABLE_FOR_DOWNLOAD;
+          await this.qrCodeRepository.save(record);
+
+          updated.push(filename);
+        } catch (err: any) {
+          failed.push({ filename, reason: err.message });
+        }
       }
-
-      const nameWithoutExt = filename.slice(0, -4); // remove .pdf
-      const parts = nameWithoutExt.split('_');
-      if (parts.length < 2) {
-        failed.push({ filename, reason: 'Filename must be {account_number}_{mobile_number}.pdf' });
-        continue;
-      }
-
-      // Last segment is mobile_number, everything before is account_number
-      const mobile_number = parts[parts.length - 1];
-      const account_number = parts.slice(0, parts.length - 1).join('_');
-
-      // Look up the record
-      const record = await this.qrCodeRepository.findOne({
-        where: { account_number, mobile_number },
-        relations: ['regional_office'],
-      });
-
-      if (!record) {
-        failed.push({ filename, reason: `No record found for account=${account_number}, mobile=${mobile_number}` });
-        continue;
-      }
-
-      // Determine destination folder using regional office name
-      const roName = record.regional_office?.name
-        ? record.regional_office.name.replace(/[^a-zA-Z0-9_-]/g, '_')
-        : 'UNKNOWN_RO';
-      const destDir = path.join('./uploads', 'qr-codes', roName);
-
-      if (!fs.existsSync(destDir)) {
-        fs.mkdirSync(destDir, { recursive: true });
-      }
-
-      const destPath = path.join(destDir, filename);
-
-      // Extract and write the file
-      const pdfBuffer = entry.getData();
-      fs.writeFileSync(destPath, pdfBuffer);
-
-      // Update record
-      record.qr_pdf_url = destPath;
-      record.qr_pdf_filename = filename;
-      record.status = QrCodeStatus.AVAILABLE_FOR_DOWNLOAD;
-      await this.qrCodeRepository.save(record);
-
-      updated.push(filename);
+    } finally {
+      // Cleanup temp PNGs and uploaded ZIP
+      try { fs.rmSync(tempDir, { recursive: true, force: true }); } catch (_) { }
+      try { fs.unlinkSync(zipFile.path); } catch (_) { }
     }
 
-    // Clean up the uploaded ZIP file
-    try {
-      fs.unlinkSync(zipFile.path);
-    } catch (_) { }
-
-    return { processed: entries.length, updated, failed };
+    return { processed: pdfEntries.length, updated, failed };
   }
 
   // ─── Download QR PDF ──────────────────────────────────────────────────────────
