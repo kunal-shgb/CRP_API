@@ -268,9 +268,11 @@ export class QrCodesService {
 
   /**
    * Calls image_service.py to crop sourcePng and paste onto templatePng.
-   * Returns the result PNG file path.
+   * Renames the output file to {account_number}_{mobile_number}.png.
    */
   private callImageService(
+    account_number: string,
+    mobile_number: string,
     sourcePng: string,
     templatePng: string,
     crop: { x: number; y: number; width: number; height: number },
@@ -303,11 +305,19 @@ export class QrCodesService {
           }
         }
         try {
-          resolve(JSON.parse(stdout.trim()));
+          const raw: { file_name: string; file_path: string } = JSON.parse(stdout.trim());
+
+          // Rename the UUID-named output to a meaningful filename
+          const finalName = `${account_number}_${mobile_number}.png`;
+          const finalPath = path.join(path.dirname(raw.file_path), finalName);
+          fs.renameSync(raw.file_path, finalPath);
+
+          resolve({ file_name: finalName, file_path: finalPath });
         } catch {
           reject(new Error(`Unexpected output from image_service.py: ${stdout}`));
         }
       });
+
     });
   }
 
@@ -334,7 +344,15 @@ export class QrCodesService {
 
     const zip = new AdmZip(zipFile.path);
     const entries = zip.getEntries();
-    const pdfEntries = entries.filter(e => !e.isDirectory && e.entryName.toLowerCase().endsWith('.pdf'));
+    const pdfEntries = entries.filter(e => {
+      const name = path.basename(e.entryName);
+      return (
+        !e.isDirectory &&
+        e.entryName.toLowerCase().endsWith('.pdf') &&
+        !name.startsWith('._') &&          // macOS resource fork files
+        !e.entryName.includes('__MACOSX')  // macOS metadata directory
+      );
+    });
 
     const updated: string[] = [];
     const failed: { filename: string; reason: string }[] = [];
@@ -355,24 +373,7 @@ export class QrCodesService {
         }
 
         try {
-          // ── Step 2: PDF → PNG via mupdf (pure Node.js, no system deps) ─────
-          const pdfBuffer = entry.getData();
-          const pngBuffer = await this.pdfPageToPng(pdfBuffer, cfg.page_index ?? 0, cfg.dpi ?? 200);
-
-          const tempPng = path.join(tempDir, `${mobile_number}_${Date.now()}.png`);
-          fs.writeFileSync(tempPng, pngBuffer);
-
-          // ── Step 3: Crop + paste via Python image_service.py ────────────────
-          const outDir = path.join(process.cwd(), 'uploads', 'qr-processed');
-          const pyResult = await this.callImageService(
-            tempPng,
-            templatePath,
-            cfg.crop,
-            cfg.paste,
-            outDir,
-          );
-
-          // ── Step 4: DB lookup by mobile number ──────────────────────────────
+          // ── Step 2: DB lookup by mobile number (needed for RO folder) ────────
           const record = await this.qrCodeRepository.findOne({
             where: { mobile_number },
             relations: ['regional_office'],
@@ -383,20 +384,33 @@ export class QrCodesService {
             continue;
           }
 
-          // ── Step 5: Copy result to RO-scoped folder ─────────────────────────
+          // ── Step 3: Resolve RO-scoped destination folder ─────────────────────
           const roName = record.regional_office?.name
             ? record.regional_office.name.replace(/[^a-zA-Z0-9_-]/g, '_')
             : 'UNKNOWN_RO';
           const destDir = path.join(process.cwd(), 'uploads', 'qr-codes', roName);
           fs.mkdirSync(destDir, { recursive: true });
 
-          const destFilename = `${mobile_number}_qr.png`;
-          const destPath = path.join(destDir, destFilename);
-          fs.copyFileSync(pyResult.file_path, destPath);
+          // ── Step 4: PDF → PNG via mupdf (pure Node.js, no system deps) ───────
+          const pdfBuffer = entry.getData();
+          const pngBuffer = await this.pdfPageToPng(pdfBuffer, cfg.page_index ?? 0, cfg.dpi);
 
-          // ── Step 6: Update DB record ────────────────────────────────────────
-          record.qr_pdf_url = destPath;
-          record.qr_pdf_filename = destFilename;
+          const tempPng = path.join(tempDir, `${mobile_number}_${Date.now()}.png`);
+          fs.writeFileSync(tempPng, pngBuffer);
+
+          // ── Step 5: Crop + paste via Python — output goes directly to RO dir ──
+          const pyResult = await this.callImageService(
+            record.account_number,
+            record.mobile_number,
+            tempPng,
+            templatePath,
+            cfg.crop,
+            cfg.paste,
+            destDir,  // Python saves the result directly here — no intermediate folder
+          );
+          // ── Step 6: Update DB record ─────────────────────────────────────────
+          record.qr_pdf_url = pyResult.file_path;
+          record.qr_pdf_filename = pyResult.file_name;
           record.status = QrCodeStatus.AVAILABLE_FOR_DOWNLOAD;
           await this.qrCodeRepository.save(record);
 
