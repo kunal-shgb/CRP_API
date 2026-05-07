@@ -234,13 +234,19 @@ export class QrCodesService {
   // ─── Bulk Upload ZIP (HO) ──────────────────────────────────────────────────────
 
   /**
-   * Extracts the mobile number from filenames like:
+   * Extracts the 10-digit mobile number from filenames like:
    *   71451121_SPM_PUNB000005618638-918950699901_07-05-2026_12_10_04.pdf
-   * Mobile number sits between the last '-' and the next '_' before the date.
+   * The raw number between '-' and '_<date>' includes the country code (91).
+   * We strip the leading '91' to get the 10-digit mobile number stored in DB.
    */
   private extractMobileFromFilename(filename: string): string | null {
     const match = filename.match(/-(\d+)_\d{2}-\d{2}-\d{4}/);
-    return match ? match[1] : null;
+    if (!match) return null;
+    const rawNumber = match[1]; // e.g. "918950699901"
+    // Strip 2-digit country code (91) → "8950699901"
+    return rawNumber.startsWith('91') && rawNumber.length === 12
+      ? rawNumber.slice(2)
+      : rawNumber;
   }
 
   /**
