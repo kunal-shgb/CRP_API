@@ -81,6 +81,6 @@ export class QrCodesController {
   @Roles(UserRole.ADMIN, UserRole.HEAD_OFFICE, UserRole.REGIONAL_OFFICE, UserRole.BRANCH)
   async downloadFile(@Param('id') id: string, @CurrentUser() user: any, @Res() res: Response) {
     const filePath = await this.qrCodesService.getQrPdfPath(+id, user);
-    return res.sendFile(filePath, { root: '.' });
+    return res.sendFile(filePath);
   }
 }
