@@ -408,11 +408,18 @@ export class QrCodesService {
             cfg.paste,
             destDir,  // Python saves the result directly here — no intermediate folder
           );
+
+          // ── Step 5.5: Convert PNG to PDF ────────────────────────────────────
+          const pdfPath = await this.imageToPdF(pyResult.file_path);
+
           // ── Step 6: Update DB record ─────────────────────────────────────────
-          record.qr_pdf_url = pyResult.file_path;
-          record.qr_pdf_filename = pyResult.file_name;
+          record.qr_pdf_url = pdfPath;
+          record.qr_pdf_filename = path.basename(pdfPath);
           record.status = QrCodeStatus.AVAILABLE_FOR_DOWNLOAD;
           await this.qrCodeRepository.save(record);
+
+          // Optional: Cleanup the intermediate PNG if desired
+          try { fs.unlinkSync(pyResult.file_path); } catch (_) { }
 
           updated.push(filename);
         } catch (err: any) {
@@ -449,5 +456,34 @@ export class QrCodesService {
     }
 
     return record.qr_pdf_url;
+  }
+
+  /**
+   * Converts a PNG image to a PDF file using Python/Pillow.
+   * Returns the path to the generated PDF.
+   */
+  private async imageToPdF(imagePath: string): Promise<string> {
+    if (imagePath.toLowerCase().endsWith('.pdf')) {
+      return imagePath;
+    }
+
+    const pdfPath = imagePath.replace(/\.(png|jpg|jpeg)$/i, '.pdf');
+    const PYTHON = process.env.PYTHON_BIN ?? 'python3';
+    
+    const args = [
+      '-c',
+      "from PIL import Image; import sys; img=Image.open(sys.argv[1]).convert('RGB'); img.save(sys.argv[2], 'PDF')",
+      imagePath,
+      pdfPath,
+    ];
+
+    return new Promise((resolve, reject) => {
+      execFile(PYTHON, args, (err, stdout, stderr) => {
+        if (err) {
+          return reject(new Error(`Failed to convert image to PDF: ${stderr || err.message}`));
+        }
+        resolve(pdfPath);
+      });
+    });
   }
 }
