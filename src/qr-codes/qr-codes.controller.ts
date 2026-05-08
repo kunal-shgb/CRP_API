@@ -1,5 +1,6 @@
 import {
   Controller, Get, Post, Body, Param, UseGuards, Query, UseInterceptors, UploadedFile, Res,
+  Patch,
 } from '@nestjs/common';
 import { FileInterceptor } from '@nestjs/platform-express';
 import { diskStorage } from 'multer';
@@ -9,6 +10,7 @@ import * as fs from 'fs';
 
 import { QrCodesService } from './qr-codes.service';
 import { CreateQrCodeDto } from './dto/create-qr-code.dto';
+import { UpdateQrCodeDto } from './dto/update-qr-code.dto';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
 import { RolesGuard } from '../auth/guards/roles.guard';
 import { Roles } from '../auth/decorators/roles.decorator';
@@ -24,6 +26,16 @@ export class QrCodesController {
   @Roles(UserRole.BRANCH, UserRole.REGIONAL_OFFICE)
   async create(@Body() createQrCodeDto: CreateQrCodeDto, @CurrentUser() user: any) {
     return this.qrCodesService.create(createQrCodeDto, user);
+  }
+
+  @Patch(':id')
+  @Roles(UserRole.BRANCH, UserRole.REGIONAL_OFFICE)
+  async update(
+    @Param('id') id: string,
+    @Body() updateQrCodeDto: UpdateQrCodeDto,
+    @CurrentUser() user: any,
+  ) {
+    return this.qrCodesService.update(+id, updateQrCodeDto, user);
   }
 
   @Get()

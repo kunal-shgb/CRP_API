@@ -11,6 +11,8 @@ import { execFile } from 'child_process';
 // mupdf is ESM-only (top-level await) — must be loaded via dynamic import()
 import { QrCode } from './entities/qr-code.entity';
 import { CreateQrCodeDto } from './dto/create-qr-code.dto';
+import { UpdateQrCodeDto } from './dto/update-qr-code.dto';
+
 import { QrCodeStatus } from '../common/enums/qr-code-status.enum';
 import { UserRole } from '../common/enums/user-role.enum';
 
@@ -171,6 +173,29 @@ export class QrCodesService {
     });
     if (!qr) throw new NotFoundException(`QR Code record #${id} not found`);
     return qr;
+  }
+
+  async update(id: number, dto: UpdateQrCodeDto, user: any): Promise<QrCode> {
+    const qr = await this.findOne(id);
+
+    // Permission check
+    if (user.role === UserRole.BRANCH) {
+      if (qr.branch?.id !== user.branch?.id) {
+        throw new ForbiddenException('You can only update QR codes for your own branch');
+      }
+    } else if (user.role === UserRole.REGIONAL_OFFICE) {
+      if (qr.regional_office?.id !== user.regionalOffice?.id) {
+        throw new ForbiddenException('You can only update QR codes for your own regional office');
+      }
+    }
+
+    // Don't allow updating if already generated? Or maybe just allow it?
+    // Let's allow it for now, but usually you shouldn't update account numbers once generated.
+    
+    Object.assign(qr, dto);
+    await this.qrCodeRepository.save(qr);
+
+    return this.findOne(id);
   }
 
   // ─── Export Pending (HO) ──────────────────────────────────────────────────────
@@ -409,10 +434,10 @@ export class QrCodesService {
             destDir,  // Python saves the result directly here — no intermediate folder
           );
 
-          // ── Step 5.5: Convert PNG to PDF ────────────────────────────────────
+          // ── Step 6: Convert PNG to PDF ────────────────────────────────────
           const pdfPath = await this.imageToPdF(pyResult.file_path);
 
-          // ── Step 6: Update DB record ─────────────────────────────────────────
+          // ── Step 7: Update DB record ─────────────────────────────────────────
           record.qr_pdf_url = pdfPath;
           record.qr_pdf_filename = path.basename(pdfPath);
           record.status = QrCodeStatus.AVAILABLE_FOR_DOWNLOAD;
