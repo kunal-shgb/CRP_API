@@ -351,11 +351,15 @@ export class QrCodesService {
     updated: string[];
     failed: { filename: string; reason: string }[];
   }> {
+    const totalStart = Date.now();
+    console.log(`[bulkUploadZip] Starting bulk upload process for file: ${zipFile.originalname}`);
+
     if (!zipFile) {
       throw new BadRequestException('No ZIP file provided');
     }
 
     // Load image config
+    const configStart = Date.now();
     const configPath = path.join(process.cwd(), 'python', 'image_config.json');
     if (!fs.existsSync(configPath)) {
       throw new BadRequestException('Image config not found at python/image_config.json');
@@ -366,9 +370,12 @@ export class QrCodesService {
     if (!fs.existsSync(templatePath)) {
       throw new BadRequestException(`Template image not found: ${cfg.template_path}`);
     }
+    console.log(`[bulkUploadZip] Config and template check took ${Date.now() - configStart}ms`);
 
+    const zipStart = Date.now();
     const zip = new AdmZip(zipFile.path);
     const entries = zip.getEntries();
+    console.log(`[bulkUploadZip] ZIP extraction took ${Date.now() - zipStart}ms for ${entries.length} entries`);
     const pdfEntries = entries.filter(e => {
       const name = path.basename(e.entryName);
       return (
@@ -388,6 +395,7 @@ export class QrCodesService {
 
     try {
       for (const entry of pdfEntries) {
+        const entryStart = Date.now();
         const filename = path.basename(entry.entryName);
 
         // ── Step 1: Extract mobile number from filename ──────────────────────
@@ -399,10 +407,12 @@ export class QrCodesService {
 
         try {
           // ── Step 2: DB lookup by mobile number (needed for RO folder) ────────
+          const dbLookupStart = Date.now();
           const record = await this.qrCodeRepository.findOne({
             where: { mobile_number },
             relations: ['regional_office'],
           });
+          console.log(`[bulkUploadZip] [${filename}] DB lookup took ${Date.now() - dbLookupStart}ms`);
 
           if (!record) {
             failed.push({ filename, reason: `No record found for mobile=${mobile_number}` });
@@ -417,13 +427,16 @@ export class QrCodesService {
           fs.mkdirSync(destDir, { recursive: true });
 
           // ── Step 4: PDF → PNG via mupdf (pure Node.js, no system deps) ───────
+          const pdfToPngStart = Date.now();
           const pdfBuffer = entry.getData();
           const pngBuffer = await this.pdfPageToPng(pdfBuffer, cfg.page_index ?? 0, cfg.dpi);
 
           const tempPng = path.join(tempDir, `${mobile_number}_${Date.now()}.png`);
           fs.writeFileSync(tempPng, pngBuffer);
+          console.log(`[bulkUploadZip] [${filename}] PDF to PNG conversion took ${Date.now() - pdfToPngStart}ms`);
 
           // ── Step 5: Crop + paste via Python — output goes directly to RO dir ──
+          const pythonStart = Date.now();
           const pyResult = await this.callImageService(
             record.account_number,
             record.mobile_number,
@@ -433,20 +446,26 @@ export class QrCodesService {
             cfg.paste,
             destDir,  // Python saves the result directly here — no intermediate folder
           );
+          console.log(`[bulkUploadZip] [${filename}] Python processing took ${Date.now() - pythonStart}ms`);
 
           // ── Step 6: Convert PNG to PDF ────────────────────────────────────
+          const pngToPdfStart = Date.now();
           const pdfPath = await this.imageToPdF(pyResult.file_path);
+          console.log(`[bulkUploadZip] [${filename}] PNG to PDF conversion took ${Date.now() - pngToPdfStart}ms`);
 
           // ── Step 7: Update DB record ─────────────────────────────────────────
+          const dbSaveStart = Date.now();
           record.qr_pdf_url = pdfPath;
           record.qr_pdf_filename = path.basename(pdfPath);
           record.status = QrCodeStatus.AVAILABLE_FOR_DOWNLOAD;
           await this.qrCodeRepository.save(record);
+          console.log(`[bulkUploadZip] [${filename}] DB save took ${Date.now() - dbSaveStart}ms`);
 
           // Optional: Cleanup the intermediate PNG if desired
           try { fs.unlinkSync(pyResult.file_path); } catch (_) { }
 
           updated.push(filename);
+          console.log(`[bulkUploadZip] [${filename}] Total processing time: ${Date.now() - entryStart}ms`);
         } catch (err: any) {
           failed.push({ filename, reason: err.message });
         }
@@ -455,6 +474,7 @@ export class QrCodesService {
       // Cleanup temp PNGs and uploaded ZIP
       try { fs.rmSync(tempDir, { recursive: true, force: true }); } catch (_) { }
       try { fs.unlinkSync(zipFile.path); } catch (_) { }
+      console.log(`[bulkUploadZip] Finished. Total execution time: ${Date.now() - totalStart}ms. Processed: ${pdfEntries.length}, Updated: ${updated.length}, Failed: ${failed.length}`);
     }
 
     return { processed: pdfEntries.length, updated, failed };
