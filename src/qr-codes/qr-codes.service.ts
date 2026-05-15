@@ -13,6 +13,7 @@ import { UpdateQrCodeDto } from './dto/update-qr-code.dto';
 
 import { QrCodeStatus } from '../common/enums/qr-code-status.enum';
 import { UserRole } from '../common/enums/user-role.enum';
+import { Branch } from '../branches/entities/branch.entity';
 
 interface ImageConfig {
   template_path: string;
@@ -77,7 +78,7 @@ export class QrCodesService {
   ) {
     const query = this.qrCodeRepository.createQueryBuilder('qr');
     query.leftJoinAndSelect('qr.created_by', 'createdBy');
-    query.leftJoinAndSelect('qr.branch', 'branch');
+    query.leftJoinAndMapOne('qr.branch', Branch, 'branch', 'qr.sol_id = branch.code');
     query.leftJoinAndSelect('qr.regional_office', 'regionalOffice');
 
     // Role-based scoping
@@ -119,7 +120,7 @@ export class QrCodesService {
 
     // Status summary counts
     const summaryQuery = this.qrCodeRepository.createQueryBuilder('qr');
-    summaryQuery.leftJoin('qr.branch', 'branch');
+    summaryQuery.leftJoin(Branch, 'branch', 'qr.sol_id = branch.code');
     summaryQuery.leftJoin('qr.regional_office', 'regionalOffice');
 
     if (user.role === UserRole.ADMIN) {
@@ -165,10 +166,13 @@ export class QrCodesService {
   // ─── Find One ─────────────────────────────────────────────────────────────────
 
   async findOne(id: number): Promise<QrCode> {
-    const qr = await this.qrCodeRepository.findOne({
-      where: { id },
-      relations: ['created_by', 'branch', 'regional_office'],
-    });
+    const qr = await this.qrCodeRepository.createQueryBuilder('qr')
+      .leftJoinAndSelect('qr.created_by', 'createdBy')
+      .leftJoinAndMapOne('qr.branch', Branch, 'branch', 'qr.sol_id = branch.code')
+      .leftJoinAndSelect('qr.regional_office', 'regionalOffice')
+      .where('qr.id = :id', { id })
+      .getOne();
+
     if (!qr) throw new NotFoundException(`QR Code record #${id} not found`);
     return qr;
   }
