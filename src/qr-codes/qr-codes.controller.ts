@@ -1,6 +1,6 @@
 import {
   Controller, Get, Post, Body, Param, UseGuards, Query, UseInterceptors, UploadedFile, Res,
-  Patch,
+  Patch, Delete,
 } from '@nestjs/common';
 import { FileInterceptor } from '@nestjs/platform-express';
 import { diskStorage } from 'multer';
@@ -29,13 +29,22 @@ export class QrCodesController {
   }
 
   @Patch(':id')
-  @Roles(UserRole.BRANCH, UserRole.REGIONAL_OFFICE)
+  @Roles(UserRole.BRANCH, UserRole.REGIONAL_OFFICE, UserRole.HEAD_OFFICE, UserRole.ADMIN)
   async update(
     @Param('id') id: string,
     @Body() updateQrCodeDto: UpdateQrCodeDto,
     @CurrentUser() user: any,
   ) {
     return this.qrCodesService.update(+id, updateQrCodeDto, user);
+  }
+
+  @Delete(':id')
+  @Roles(UserRole.REGIONAL_OFFICE, UserRole.HEAD_OFFICE, UserRole.ADMIN)
+  async remove(
+    @Param('id') id: string,
+    @CurrentUser() user: any,
+  ) {
+    return this.qrCodesService.delete(+id, user);
   }
 
   @Get()

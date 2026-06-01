@@ -475,6 +475,36 @@ export class QrCodesService {
     return { processed: pdfEntries.length, updated, failed };
   }
 
+  // ─── Delete ───────────────────────────────────────────────────────────────────
+
+  async delete(id: number, user: any): Promise<{ message: string }> {
+    const qr = await this.findOne(id);
+
+    // Role-based ownership check
+    if (user.role === UserRole.BRANCH) {
+      if (qr.branch?.id !== user.branch?.id) {
+        throw new ForbiddenException('You can only delete QR codes for your own branch');
+      }
+    } else if (user.role === UserRole.REGIONAL_OFFICE) {
+      if (qr.regional_office?.id !== user.regionalOffice?.id) {
+        throw new ForbiddenException('You can only delete QR codes for your own regional office');
+      }
+    }
+
+    // If a generated QR PDF exists on disk, delete the physical file
+    if (qr.qr_pdf_url && fs.existsSync(qr.qr_pdf_url)) {
+      try {
+        fs.unlinkSync(qr.qr_pdf_url);
+      } catch (err: any) {
+        // Log but don't block deletion if file removal fails
+        console.warn(`[delete] Could not delete QR PDF file at ${qr.qr_pdf_url}: ${err.message}`);
+      }
+    }
+
+    await this.qrCodeRepository.remove(qr);
+    return { message: `QR Code #${id} deleted successfully` };
+  }
+
   // ─── Download QR PDF ──────────────────────────────────────────────────────────
 
   async getQrPdfPath(id: number, user: any): Promise<string> {
